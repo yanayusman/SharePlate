@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name" translatable="false">SharePlateApp</string>
+    <string name="get_started">Get Started</string>
+    <string name="already_have_account">Already have an Account? </string>
+    <string name="log_in">Log in</string>
+    <string name="share" translatable="false">Share</string>
+    <string name="plate" translatable="false">Plate</string>
+    <string name="username_hint">Username</string>
+    <string name="password_hint">Password</string>
+    <string name="login">Login</string>
+    <string name="signup">Sign Up</string>
+    <string name="cancel">Cancel</string>
+    <string name="username">Username</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="forgot_password">Forgot your password?</string>
+    <string name="password">Password</string>
+    <string name="email">Email</string>
+    <string name="update">Update</string>
+    <string name="notification">Notification</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="rate_app">Rate App</string>
+    <string name="share_app">Share App</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms_conditions">Terms Conditions</string>
+    <string name="logout">Logout</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="change_picture">Change Picture</string>
+    <string name="default_web_client_id">738549068311-70396kc7ee16bi2otbv6lmr1cnofg8a8.apps.googleusercontent.com</string>
+</resources>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <ImageView
+        android:id="@+id/food_image"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/placeholder_image"
+        android:contentDescription="Food Image"/>
+
+    <EditText
+        android:id="@+id/name_input"
+        android:layout_width="380dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="16dp"
+        android:hint="Item Name"
+        android:inputType="text" />
+
+    <EditText
+        android:id="@+id/food_category_input"
+        android:layout_width="380dp"
+        android:layout_height="50dp"
+        android:hint="Category"
+        android:layout_marginTop="8dp"
+        android:inputType="text"/>
+
+    <EditText
+        android:id="@+id/description_input"
+        android:layout_width="380dp"
+        android:layout_height="50dp"
+        android:hint="Description"
+        android:layout_marginTop="8dp"
+        android:inputType="textMultiLine"
+        android:minLines="2"
+        android:gravity="top|start"/>
+
+    <EditText
+        android:id="@+id/expiry_date_input"
+        android:layout_width="380dp"
+        android:layout_height="50dp"
+        android:hint="Expiry Date"
+        android:layout_marginTop="8dp"
+        android:inputType="none"
+        android:focusable="false"/>
+
+    <EditText
+        android:id="@+id/quantity_input"
+        android:layout_width="380dp"
+        android:layout_height="50dp"
+        android:hint="Quantity"
+        android:layout_marginTop="8dp"
+        android:inputType="number"/>
+
+    <EditText
+        android:id="@+id/pickup_time_input"
+        android:layout_width="380dp"
+        android:layout_height="50dp"
+        android:hint="Pickup Time"
+        android:layout_marginTop="8dp"
+        android:inputType="none"
+        android:focusable="false"/>
+
+    <EditText
+        android:id="@+id/location_input"
+        android:layout_width="380dp"
+        android:layout_height="50dp"
+        android:hint="Location"
+        android:layout_marginTop="8dp"
+        android:inputType="text"/>
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="380dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/submit_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Submit Donation"
+        android:layout_marginTop="16dp"/>
+
+    <ImageView
+        android:id="@+id/back_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_back"
+        android:padding="16dp"
+        android:contentDescription="Back"/>
+
+</LinearLayout>

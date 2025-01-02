@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/navigation_home"
+        android:icon="@drawable/ic_home_filled"
+        android:title="Home"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/navigation_community"
+        android:icon="@drawable/ic_community"
+        android:title="Community"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/navigation_actions"
+        android:icon="@drawable/ic_actions"
+        android:title="Actions"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/navigation_profile"
+        android:icon="@drawable/ic_profile"
+        android:title="Profile"
+        app:showAsAction="always" />
+</menu>
