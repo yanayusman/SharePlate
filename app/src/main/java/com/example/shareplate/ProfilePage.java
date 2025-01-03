@@ -166,12 +166,11 @@ public class ProfilePage extends Fragment {
         });
 
         termsConditionButton.setOnClickListener(v -> {
-            requireActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, new TermConditionFragment())
-                    .addToBackStack(null)
-                    .commit();
+            String termsUrl = "https://sites.google.com/view/shareplate-terms-conditions";
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(termsUrl));
+            startActivity(browserIntent);
         });
+
         return view;
     }
 
