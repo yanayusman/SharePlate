@@ -12,7 +12,12 @@
           "package_name": "com.example.shareplate"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1092408262320-ujt32titu09id3dli8q6rf3gp9cn500h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCchGmLOwyojIg50nYerwe27kEqZl5W6gQ"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1092408262320-ujt32titu09id3dli8q6rf3gp9cn500h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
