@@ -42,6 +42,8 @@ import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import android.graphics.drawable.Drawable;
 import com.bumptech.glide.RequestBuilder;
+import java.util.Map;
+import java.util.HashMap;
 
 public class ProfilePage extends Fragment {
     private static final String TAG = "ProfilePage";
@@ -179,24 +181,49 @@ public class ProfilePage extends Fragment {
             FirebaseFirestore db = FirebaseFirestore.getInstance();
 
             db.collection(COLLECTION_USER)
-                    .whereEqualTo("email", userEmail)
+                    .document(userEmail)
                     .get()
-                    .addOnSuccessListener(queryDocumentSnapshots -> {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            DocumentSnapshot document = queryDocumentSnapshots.getDocuments().get(0);
-                            String username = " ";
-                            if (document.exists()) {
-                                username = document.getString("username");
-                                if (username == null || username.isEmpty()) {
-                                    username = "Anonymous";
-                                }
+                    .addOnSuccessListener(document -> {
+                        if (document.exists()) {
+                            String username = document.getString("username");
+                            if (username == null || username.isEmpty()) {
+                                // If username is not set, use email prefix as default
+                                username = userEmail.substring(0, userEmail.indexOf('@'));
+                                
+                                // Update the username in Firestore
+                                document.getReference().update("username", username)
+                                        .addOnFailureListener(e -> {
+                                            Log.e("FirestoreError", "Error updating username", e);
+                                        });
                             }
-                            // Display username and fetch donation count
+                            // Display username and fetch counts
                             usernameTextView.setText(username);
                             fetchDonatedCount(username);
                             fetchRequestedCount(username);
                             fetchCampaignsCount(username);
                             fetchVolunteersCount(username);
+                        } else {
+                            // Create user document if it doesn't exist
+                            String defaultUsername = userEmail.substring(0, userEmail.indexOf('@'));
+                            Map<String, Object> userData = new HashMap<>();
+                            userData.put("email", userEmail);
+                            userData.put("username", defaultUsername);
+                            userData.put("location", "");
+                            userData.put("phoneNumber", "");
+
+                            db.collection(COLLECTION_USER)
+                                    .document(userEmail)
+                                    .set(userData)
+                                    .addOnSuccessListener(aVoid -> {
+                                        usernameTextView.setText(defaultUsername);
+                                        fetchDonatedCount(defaultUsername);
+                                        fetchRequestedCount(defaultUsername);
+                                        fetchCampaignsCount(defaultUsername);
+                                        fetchVolunteersCount(defaultUsername);
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e("FirestoreError", "Error creating user document", e);
+                                    });
                         }
                     })
                     .addOnFailureListener(e -> {

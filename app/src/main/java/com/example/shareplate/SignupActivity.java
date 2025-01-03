@@ -55,6 +55,11 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+import java.util.Map;
+import java.util.HashMap;
+import com.google.firebase.auth.UserProfileChangeRequest;
 
 public class SignupActivity extends AppCompatActivity {
     private static final String TAG = "SignupActivity";
@@ -144,6 +149,25 @@ public class SignupActivity extends AppCompatActivity {
                                     Log.d(TAG, "createUserWithEmail:success");
                                     FirebaseUser user = mAuth.getCurrentUser();
                                     if (user != null) {
+                                        // Create user document with default username
+                                        String defaultUsername = email.substring(0, email.indexOf('@'));
+                                        Map<String, Object> userData = new HashMap<>();
+                                        userData.put("email", email);
+                                        userData.put("username", defaultUsername);
+                                        userData.put("location", "");
+                                        userData.put("phoneNumber", "");
+
+                                        FirebaseFirestore.getInstance()
+                                                .collection("users")
+                                                .document(email)
+                                                .set(userData)
+                                                .addOnSuccessListener(aVoid -> {
+                                                    Log.d(TAG, "User document created successfully");
+                                                })
+                                                .addOnFailureListener(e -> {
+                                                    Log.e(TAG, "Error creating user document", e);
+                                                });
+
                                         // Send verification email
                                         user.sendEmailVerification()
                                                 .addOnCompleteListener(new OnCompleteListener<Void>() {
@@ -289,7 +313,26 @@ public class SignupActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         Log.d(TAG, "signInWithCredential:success");
                         FirebaseUser user = mAuth.getCurrentUser();
-                        navigateToHome();
+                        if (user != null) {
+                            // Update the user's profile with Google display name if not set
+                            if (user.getDisplayName() == null || user.getDisplayName().isEmpty()) {
+                                GoogleSignInAccount acct = GoogleSignIn.getLastSignedInAccount(this);
+                                if (acct != null && acct.getDisplayName() != null) {
+                                    UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                            .setDisplayName(acct.getDisplayName())
+                                            .build();
+                                    
+                                    user.updateProfile(profileUpdates)
+                                            .addOnCompleteListener(profileTask -> {
+                                                createUserDocument(user);
+                                                navigateToHome();
+                                            });
+                                    return;
+                                }
+                            }
+                            createUserDocument(user);
+                            navigateToHome();
+                        }
                     } else {
                         Log.w(TAG, "signInWithCredential:failure", task.getException());
                         String errorMessage = task.getException() != null ?
@@ -297,6 +340,37 @@ public class SignupActivity extends AppCompatActivity {
                         Toast.makeText(SignupActivity.this, errorMessage,
                                 Toast.LENGTH_SHORT).show();
                     }
+                });
+    }
+
+    private void createUserDocument(FirebaseUser user) {
+        if (user == null || user.getEmail() == null) return;
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String email = user.getEmail();
+        
+        // Get username from Google account if available, otherwise use email prefix
+        String defaultUsername;
+        if (user.getDisplayName() != null && !user.getDisplayName().isEmpty()) {
+            defaultUsername = user.getDisplayName();
+        } else {
+            defaultUsername = email.substring(0, email.indexOf('@'));
+        }
+
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("email", email);
+        userData.put("username", defaultUsername);
+        userData.put("location", "");
+        userData.put("phoneNumber", "");
+
+        db.collection("users")
+                .document(email)
+                .set(userData, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "User document created successfully with username: " + defaultUsername);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error creating user document", e);
                 });
     }
 
