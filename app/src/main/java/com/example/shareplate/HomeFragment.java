@@ -140,6 +140,16 @@ public class HomeFragment extends Fragment {
 
         // Set up sort functionality
         sortIcon.setOnClickListener(v -> showSortOptions());
+
+        // Add notification icon click listener
+        ImageView notificationIcon = view.findViewById(R.id.notification_icon);
+        notificationIcon.setOnClickListener(v -> {
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new NotificationAll())
+                    .addToBackStack(null)
+                    .commit();
+        });
     }
 
     private void checkUserExistence(){
