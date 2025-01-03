@@ -15,6 +15,9 @@ public class HomePageActivity extends AppCompatActivity {
 
     BottomNavigationView bottomNavigationView;
     private boolean isFragmentTransactionInProgress = false;
+    private static final int TRANSACTION_DEBOUNCE_TIME = 300; // milliseconds
+    private Handler handler = new Handler();
+    private Runnable pendingRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +45,9 @@ public class HomePageActivity extends AppCompatActivity {
             }
 
             if (fragment != null) {
-                replaceFragment(fragment);
+                final Fragment finalFragment = fragment;
+                // Post the fragment transaction to the main thread
+                handler.post(() -> replaceFragment(finalFragment));
                 return true;
             }
             return false;
@@ -50,20 +55,45 @@ public class HomePageActivity extends AppCompatActivity {
 
         // Load the HomeFragment initially
         if (savedInstanceState == null) {
-            replaceFragment(new HomeFragment());
+            handler.post(() -> replaceFragment(new HomeFragment()));
         }
     }
 
     private void replaceFragment(Fragment fragment) {
-        isFragmentTransactionInProgress = true;
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container, fragment);
-        fragmentTransaction.commit();
-        
-        // Reset the flag after a short delay to allow the transaction to complete
-        new Handler().postDelayed(() -> {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+
+        try {
+            isFragmentTransactionInProgress = true;
+            FragmentManager fragmentManager = getSupportFragmentManager();
+            
+            // Clear any pending fragment transactions
+            fragmentManager.executePendingTransactions();
+            
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragmentTransaction.replace(R.id.fragment_container, fragment);
+            fragmentTransaction.commitAllowingStateLoss();
+            
+            // Reset the flag after a delay
+            if (pendingRunnable != null) {
+                handler.removeCallbacks(pendingRunnable);
+            }
+            
+            pendingRunnable = () -> isFragmentTransactionInProgress = false;
+            handler.postDelayed(pendingRunnable, TRANSACTION_DEBOUNCE_TIME);
+            
+        } catch (Exception e) {
             isFragmentTransactionInProgress = false;
-        }, 300); // 300ms should be enough for most fragment transitions
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
+        }
     }
 }

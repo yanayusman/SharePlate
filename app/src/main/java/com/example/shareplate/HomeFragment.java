@@ -210,99 +210,118 @@ public class HomeFragment extends Fragment {
     }
 
     private void displayItems() {
-        // Clear grid and sort items
-        donationGrid.removeAllViews();
-        Collections.sort(allItems, (a, b) -> {
-            long aTime = (a instanceof DonationItem) ? ((DonationItem) a).getCreatedAt() : ((RequestFood) a).getCreatedAt();
-            long bTime = (b instanceof DonationItem) ? ((DonationItem) b).getCreatedAt() : ((RequestFood) b).getCreatedAt();
-            return Long.compare(bTime, aTime); // Descending order
-        });
-
-        // Add views for all items
-        for (Object item : allItems) {
-            if (item instanceof DonationItem) {
-                addDonationItemView((DonationItem) item);
-            } else if (item instanceof RequestFood) {
-                addRequestItemView((RequestFood) item);
-            }
+        // Check if fragment is attached
+        if (!isAdded() || getActivity() == null) {
+            return;
         }
 
-        swipeRefreshLayout.setRefreshing(false);
+        try {
+            // Clear grid and sort items
+            donationGrid.removeAllViews();
+            Collections.sort(allItems, (a, b) -> {
+                long aTime = (a instanceof DonationItem) ? ((DonationItem) a).getCreatedAt() : ((RequestFood) a).getCreatedAt();
+                long bTime = (b instanceof DonationItem) ? ((DonationItem) b).getCreatedAt() : ((RequestFood) b).getCreatedAt();
+                return Long.compare(bTime, aTime); // Descending order
+            });
+
+            // Add views for all items
+            for (Object item : allItems) {
+                if (item instanceof DonationItem) {
+                    addDonationItemView((DonationItem) item);
+                } else if (item instanceof RequestFood) {
+                    addRequestItemView((RequestFood) item);
+                }
+            }
+
+            swipeRefreshLayout.setRefreshing(false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void addDonationItemView(DonationItem item) {
-        View itemView = getLayoutInflater().inflate(R.layout.donation_item_view, donationGrid, false);
-
-        ImageView itemImage = itemView.findViewById(R.id.item_image);
-        TextView itemName = itemView.findViewById(R.id.item_name);
-        TextView itemCategory = itemView.findViewById(R.id.item_category);
-        TextView itemInfo = itemView.findViewById(R.id.item_expiredDate);
-        TextView itemQuantity = itemView.findViewById(R.id.item_quantity);
-        TextView itemPickupTime = itemView.findViewById(R.id.item_pickupTime);
-        TextView itemLocation = itemView.findViewById(R.id.item_distance);
-        TextView statusIndicator = itemView.findViewById(R.id.status_indicator);
-
-        // Show status indicator if item is completed
-        if (item.getStatus() != null && item.getStatus().equals("completed")) {
-            statusIndicator.setVisibility(View.VISIBLE);
-            // Optional: Add some visual dimming to the entire card
-            itemView.setAlpha(0.8f);
-        } else {
-            statusIndicator.setVisibility(View.GONE);
-            itemView.setAlpha(1.0f);
+        // Check if fragment is attached
+        if (!isAdded() || getActivity() == null || getContext() == null) {
+            return;
         }
 
-        // Load image using Glide
-        if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-            Glide.with(this)
-                    .load(item.getImageUrl())
-                    .placeholder(R.drawable.placeholder_image)
-                    .error(R.drawable.placeholder_image)
-                    .centerCrop()
-                    .into(itemImage);
-        } else {
-            itemImage.setImageResource(item.getImageResourceId());
-        }
+        try {
+            LayoutInflater inflater = LayoutInflater.from(getContext());
+            View itemView = inflater.inflate(R.layout.donation_item_view, donationGrid, false);
 
-        itemName.setText(item.getName());
+            ImageView itemImage = itemView.findViewById(R.id.item_image);
+            TextView itemName = itemView.findViewById(R.id.item_name);
+            TextView itemCategory = itemView.findViewById(R.id.item_category);
+            TextView itemInfo = itemView.findViewById(R.id.item_expiredDate);
+            TextView itemQuantity = itemView.findViewById(R.id.item_quantity);
+            TextView itemPickupTime = itemView.findViewById(R.id.item_pickupTime);
+            TextView itemLocation = itemView.findViewById(R.id.item_distance);
+            TextView statusIndicator = itemView.findViewById(R.id.status_indicator);
 
-        if ("Food".equals(item.getDonateType())) {
-            itemCategory.setText("Food Category : " + (item.getFoodCategory() != null ? item.getFoodCategory() : "N/A"));
-            itemInfo.setText("Expires : " + (item.getExpiredDate() != null ? item.getExpiredDate() : "N/A"));
+            // Show status indicator if item is completed
+            if (item.getStatus() != null && item.getStatus().equals("completed")) {
+                statusIndicator.setVisibility(View.VISIBLE);
+                // Optional: Add some visual dimming to the entire card
+                itemView.setAlpha(0.8f);
+            } else {
+                statusIndicator.setVisibility(View.GONE);
+                itemView.setAlpha(1.0f);
+            }
+
+            // Load image using Glide
+            if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
+                Glide.with(this)
+                        .load(item.getImageUrl())
+                        .placeholder(R.drawable.placeholder_image)
+                        .error(R.drawable.placeholder_image)
+                        .centerCrop()
+                        .into(itemImage);
+            } else {
+                itemImage.setImageResource(item.getImageResourceId());
+            }
+
+            itemName.setText(item.getName());
+
+            if ("Food".equals(item.getDonateType())) {
+                itemCategory.setText("Food Category : " + (item.getFoodCategory() != null ? item.getFoodCategory() : "N/A"));
+                itemInfo.setText("Expires : " + (item.getExpiredDate() != null ? item.getExpiredDate() : "N/A"));
+                itemQuantity.setText("Quantity : " + (item.getQuantity() != null ? item.getQuantity() : "N/A"));
+                itemPickupTime.setText("Pickup Time : " + (item.getPickupTime() != null ? item.getPickupTime() : "N/A"));
+                itemLocation.setText(item.getLocation());
+
+                itemView.setOnClickListener(v -> {
+                    FoodItemDetailFragment detailFragment = FoodItemDetailFragment.newInstance(item);
+                    requireActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, detailFragment)
+                            .addToBackStack(null)
+                            .commit();
+                });
+            } else {
+                itemCategory.setText("Item Category : " + (item.getCategory() != null ? item.getCategory() : "N/A"));
+                itemInfo.setText("Description : " + (item.getDescription() != null ? item.getDescription() : "N/A"));
+                itemQuantity.setText("Quantity : " + (item.getQuantity() != null ? item.getQuantity() : "N/A"));
+                itemPickupTime.setText("Pickup Time : " + (item.getPickupTime() != null ? item.getPickupTime() : "N/A"));
+                itemLocation.setText(item.getLocation());
+
+                itemView.setOnClickListener(v -> {
+                    NonFoodItemDetail detailFragment = NonFoodItemDetail.newInstance(item);
+                    requireActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, detailFragment)
+                            .addToBackStack(null)
+                            .commit();
+                });
+            }
+
             itemQuantity.setText("Quantity : " + (item.getQuantity() != null ? item.getQuantity() : "N/A"));
             itemPickupTime.setText("Pickup Time : " + (item.getPickupTime() != null ? item.getPickupTime() : "N/A"));
             itemLocation.setText(item.getLocation());
 
-            itemView.setOnClickListener(v -> {
-                FoodItemDetailFragment detailFragment = FoodItemDetailFragment.newInstance(item);
-                requireActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, detailFragment)
-                        .addToBackStack(null)
-                        .commit();
-            });
-        } else {
-            itemCategory.setText("Item Category : " + (item.getCategory() != null ? item.getCategory() : "N/A"));
-            itemInfo.setText("Description : " + (item.getDescription() != null ? item.getDescription() : "N/A"));
-            itemQuantity.setText("Quantity : " + (item.getQuantity() != null ? item.getQuantity() : "N/A"));
-            itemPickupTime.setText("Pickup Time : " + (item.getPickupTime() != null ? item.getPickupTime() : "N/A"));
-            itemLocation.setText(item.getLocation());
-
-            itemView.setOnClickListener(v -> {
-                NonFoodItemDetail detailFragment = NonFoodItemDetail.newInstance(item);
-                requireActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, detailFragment)
-                        .addToBackStack(null)
-                        .commit();
-            });
+            donationGrid.addView(itemView);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        itemQuantity.setText("Quantity : " + (item.getQuantity() != null ? item.getQuantity() : "N/A"));
-        itemPickupTime.setText("Pickup Time : " + (item.getPickupTime() != null ? item.getPickupTime() : "N/A"));
-        itemLocation.setText(item.getLocation());
-
-        donationGrid.addView(itemView);
     }
 
     private void addRequestItemView(RequestFood item) {
