@@ -2,6 +2,8 @@ package com.example.shareplate;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -54,15 +56,23 @@ public class HomeFragment extends Fragment {
     private List<Object> allItems = new ArrayList<>();
     private SortOption currentSortOption = SortOption.DEFAULT;
     private SortDirection currentSortDirection = SortDirection.ASCENDING;
+    private View cachedSearchLayout;
+    private View cachedNormalLayout;
+    private boolean isSearchMode = false;
+    private static final int SEARCH_DELAY = 100; // ms
+    private Runnable searchRunnable;
+    private final Handler searchHandler = new Handler(Looper.getMainLooper());
+    private InputMethodManager imm;
+    private View rootView;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_home, container, false);
+        rootView = inflater.inflate(R.layout.fragment_home, container, false);
 
         checkUserExistence();
         // Initialize views and repository
-        initializeViews(view);
+        initializeViews(rootView);
         donationItemRepository = new DonationItemRepository();
         requestFoodRepo = new RequestFoodRepo();
 
@@ -74,14 +84,25 @@ public class HomeFragment extends Fragment {
 
         // Set up search functionality
         searchIcon.setOnClickListener(v -> {
+            if (isSearchMode) return;
+            isSearchMode = true;
+            
+            // Hardware acceleration for animations
+            searchLayout.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+            
+            // Update visibilities without triggering layout
             searchLayout.setVisibility(View.VISIBLE);
             normalToolbarContent.setVisibility(View.GONE);
             toolbar.setVisibility(View.GONE);
+            
+            // Focus and keyboard handling
             searchEditText.requestFocus();
-            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
-                imm.showSoftInput(searchEditText, InputMethodManager.SHOW_IMPLICIT);
+                imm.showSoftInput(searchEditText, 0);
             }
+            
+            // Reset layer type after transition
+            searchLayout.post(() -> searchLayout.setLayerType(View.LAYER_TYPE_NONE, null));
         });
 
         backArrow.setOnClickListener(v -> closeSearch());
@@ -99,23 +120,31 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        Button sortButton = view.findViewById(R.id.sortButton);
+        Button sortButton = rootView.findViewById(R.id.sortButton);
         sortButton.setOnClickListener(v -> showSortOptions());
 
         /* Comment out Urgent Donation Card components
-        CardView urgentDonationCard = view.findViewById(R.id.urgent_donation_card);
-        TextView urgentText = view.findViewById(R.id.urgent_text);
-        TextView itemTitle = view.findViewById(R.id.item_title);
-        TextView pickupText = view.findViewById(R.id.pickup_text);
-        ImageView itemImage = view.findViewById(R.id.item_image);
-        TextView foodItemText = view.findViewById(R.id.food_item_text);
-        TextView expiresText = view.findViewById(R.id.expires_text);
-        TextView quantityText = view.findViewById(R.id.quantity_text);
-        TextView pickupTimeText = view.findViewById(R.id.pickup_time_text);
-        TextView perishableText = view.findViewById(R.id.perishable_text);
+        CardView urgentDonationCard = rootView.findViewById(R.id.urgent_donation_card);
+        TextView urgentText = rootView.findViewById(R.id.urgent_text);
+        TextView itemTitle = rootView.findViewById(R.id.item_title);
+        TextView pickupText = rootView.findViewById(R.id.pickup_text);
+        ImageView itemImage = rootView.findViewById(R.id.item_image);
+        TextView foodItemText = rootView.findViewById(R.id.food_item_text);
+        TextView expiresText = rootView.findViewById(R.id.expires_text);
+        TextView quantityText = rootView.findViewById(R.id.quantity_text);
+        TextView pickupTimeText = rootView.findViewById(R.id.pickup_time_text);
+        TextView perishableText = rootView.findViewById(R.id.perishable_text);
         */
 
-        return view;
+        return rootView;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
+        // Pre-initialize IMM at fragment creation
+        imm = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
     }
 
     private void initializeViews(View view) {
@@ -146,6 +175,50 @@ public class HomeFragment extends Fragment {
 
         ImageView searchBackButton = view.findViewById(R.id.search_back_button);
         searchBackButton.setOnClickListener(v -> closeSearch());
+
+        // Pre-cache layouts and set initial states
+        searchLayout.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        normalToolbarContent.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        toolbar.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        
+        // Pre-measure and cache layouts
+        preWarmSearchLayout();
+        
+        // Optimize search icon for faster touch response
+        searchIcon.setClickable(true);
+        searchIcon.setFocusable(true);
+        searchIcon.setOnTouchListener((v, event) -> {
+            if (isSearchMode) return false;
+            showSearch();
+            return true;
+        });
+
+        // Optimize back button
+        searchBackButton.setClickable(true);
+        searchBackButton.setFocusable(true);
+        searchBackButton.setOnTouchListener((v, event) -> {
+            if (!isSearchMode) return false;
+            closeSearch();
+            return true;
+        });
+
+        // Optimize search text changes with debouncing
+        searchEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (searchRunnable != null) {
+                    searchHandler.removeCallbacks(searchRunnable);
+                }
+                searchRunnable = () -> filterItems(s.toString());
+                searchHandler.postDelayed(searchRunnable, SEARCH_DELAY);
+            }
+        });
     }
 
     private void checkUserExistence(){
@@ -401,29 +474,40 @@ public class HomeFragment extends Fragment {
     }
 
     private void filterItems(String query) {
+        if (query == null || query.isEmpty()) {
+            displayItems(); // Show all items if query is empty
+            return;
+        }
+
+        // Optimize filtering
         String lowercaseQuery = query.toLowerCase();
-        donationGrid.removeAllViews();
-
-        List<Object> filteredItems = allItems.stream()
-                .filter(item -> {
-                    if (item instanceof DonationItem) {
-                        DonationItem donationItem = (DonationItem) item;
-                        return donationItem.getName().toLowerCase().contains(lowercaseQuery);
-                    } else if (item instanceof RequestFood) {
-                        RequestFood requestItem = (RequestFood) item;
-                        return requestItem.getName().toLowerCase().contains(lowercaseQuery);
-                    }
-                    return false;
-                })
-                .collect(Collectors.toList());
-
-        for (Object item : filteredItems) {
+        List<Object> filteredItems = new ArrayList<>();
+        
+        // Use direct iteration instead of stream for better performance
+        for (Object item : allItems) {
+            String name = null;
             if (item instanceof DonationItem) {
-                addDonationItemView((DonationItem) item);
+                name = ((DonationItem) item).getName();
             } else if (item instanceof RequestFood) {
-                addRequestItemView((RequestFood) item);
+                name = ((RequestFood) item).getName();
+            }
+            
+            if (name != null && name.toLowerCase().contains(lowercaseQuery)) {
+                filteredItems.add(item);
             }
         }
+
+        // Update UI on next frame
+        rootView.post(() -> {
+            donationGrid.removeAllViews();
+            for (Object item : filteredItems) {
+                if (item instanceof DonationItem) {
+                    addDonationItemView((DonationItem) item);
+                } else if (item instanceof RequestFood) {
+                    addRequestItemView((RequestFood) item);
+                }
+            }
+        });
     }
 
     private void showSortOptions() {
@@ -565,13 +649,54 @@ public class HomeFragment extends Fragment {
     }
 
     private void closeSearch() {
+        if (!isSearchMode) return;
+        isSearchMode = false;
+        
+        // Hide keyboard first since it's the most time-consuming operation
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(searchEditText.getWindowToken(), 0);
+        }
+        
+        // Batch view updates in a single operation
         searchLayout.setVisibility(View.GONE);
         normalToolbarContent.setVisibility(View.VISIBLE);
         toolbar.setVisibility(View.VISIBLE);
-        searchEditText.setText("");
-        InputMethodManager imm = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null) {
-            imm.hideSoftInputFromWindow(searchEditText.getWindowToken(), 0);
+        
+        // Clear search text without animation
+        searchEditText.setText(null);
+    }
+
+    private void showSearch() {
+        if (isSearchMode) return;
+        isSearchMode = true;
+
+        // Pre-fetch next frame
+        rootView.post(() -> {
+            // Hardware acceleration
+            searchLayout.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+            
+            // Update visibilities in a single frame
+            searchLayout.setAlpha(1f);
+            searchLayout.setVisibility(View.VISIBLE);
+            normalToolbarContent.setVisibility(View.GONE);
+            toolbar.setVisibility(View.GONE);
+            
+            // Show keyboard
+            searchEditText.requestFocus();
+            if (imm != null) {
+                imm.showSoftInput(searchEditText, 0);
+            }
+        });
+    }
+
+    // Add method to pre-warm the search layout
+    private void preWarmSearchLayout() {
+        if (searchLayout != null) {
+            searchLayout.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            );
+            searchLayout.layout(0, 0, searchLayout.getMeasuredWidth(), searchLayout.getMeasuredHeight());
         }
     }
 }
