@@ -30,4 +30,5 @@
     <string name="search">Search</string>
     <string name="notifications">Notifications</string>
     <string name="sort">Sort</string>
+    <string name="back">Back</string>
 </resources>

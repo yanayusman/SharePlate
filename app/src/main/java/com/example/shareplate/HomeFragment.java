@@ -76,6 +76,7 @@ public class HomeFragment extends Fragment {
         searchIcon.setOnClickListener(v -> {
             searchLayout.setVisibility(View.VISIBLE);
             normalToolbarContent.setVisibility(View.GONE);
+            toolbar.setVisibility(View.GONE);
             searchEditText.requestFocus();
             InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
@@ -83,15 +84,7 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        backArrow.setOnClickListener(v -> {
-            searchLayout.setVisibility(View.GONE);
-            normalToolbarContent.setVisibility(View.VISIBLE);
-            searchEditText.setText("");
-            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (imm != null) {
-                imm.hideSoftInputFromWindow(searchEditText.getWindowToken(), 0);
-            }
-        });
+        backArrow.setOnClickListener(v -> closeSearch());
 
         searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -150,6 +143,9 @@ public class HomeFragment extends Fragment {
                     .addToBackStack(null)
                     .commit();
         });
+
+        ImageView searchBackButton = view.findViewById(R.id.search_back_button);
+        searchBackButton.setOnClickListener(v -> closeSearch());
     }
 
     private void checkUserExistence(){
@@ -565,6 +561,17 @@ public class HomeFragment extends Fragment {
             } else if (item instanceof RequestFood) {
                 addRequestItemView((RequestFood) item);
             }
+        }
+    }
+
+    private void closeSearch() {
+        searchLayout.setVisibility(View.GONE);
+        normalToolbarContent.setVisibility(View.VISIBLE);
+        toolbar.setVisibility(View.VISIBLE);
+        searchEditText.setText("");
+        InputMethodManager imm = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(searchEditText.getWindowToken(), 0);
         }
     }
 }

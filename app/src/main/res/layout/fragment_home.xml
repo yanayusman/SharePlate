@@ -5,6 +5,48 @@
     android:layout_height="match_parent"
     android:background="@color/light_gray">
 
+    <LinearLayout
+        android:id="@+id/search_layout"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_alignParentTop="true"
+        android:background="@color/white"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/search_back_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_back"
+            android:contentDescription="@string/back" />
+
+        <EditText
+            android:id="@+id/search_edit_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@null"
+            android:hint="@string/search"
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/sortButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="@string/sort"
+            android:textColor="@color/white"
+            android:background="@drawable/edittext_background"
+            android:layout_marginStart="8dp"
+            android:paddingHorizontal="16dp" />
+    </LinearLayout>
+
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -82,42 +124,21 @@
     </androidx.appcompat.widget.Toolbar>
 
     <LinearLayout
-        android:id="@+id/search_layout"
+        android:id="@+id/placeholder"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:layout_below="@id/toolbar"
-        android:background="@color/white"
+        android:layout_alignParentTop="true"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:padding="8dp"
-        android:visibility="gone">
-
-        <EditText
-            android:id="@+id/search_edit_text"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@null"
-            android:hint="@string/search"
-            android:importantForAutofill="no"
-            android:inputType="text"
-            android:textColor="@color/text_primary"
-            android:textSize="16sp" />
-
-        <Button
-            android:id="@+id/sortButton"
-            style="@style/Widget.SharePlate.Button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Sort"
-            android:layout_marginStart="8dp" />
+        android:visibility="visible">
     </LinearLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/search_layout">
+        android:layout_below="@id/placeholder">
 
         <ScrollView
             android:layout_width="match_parent"
