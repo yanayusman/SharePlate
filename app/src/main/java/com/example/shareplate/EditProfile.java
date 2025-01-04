@@ -4,6 +4,7 @@ import static android.app.Activity.RESULT_OK;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -21,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.gms.common.api.Status;
 import com.google.android.libraries.places.api.model.Place;
@@ -30,6 +32,8 @@ import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,10 +44,14 @@ public class EditProfile extends Fragment {
 
     private EditText usernameEditText, emailEditText, phoneNumberEditText, passwordEditText, locationDisplay;
     private Button updateButton;
-    private ImageView backButton, selectLocationButton;
+    private ImageView backButton, selectLocationButton, profileImage, editProfileImage;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+    private FirebaseStorage storage;
+    private StorageReference storageRef;
+    // private ActivityResultLauncher<Intent> imagePickerLauncher;
     private String userEmail;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
 
     @Nullable
@@ -60,6 +68,8 @@ public class EditProfile extends Fragment {
         // Initialize Firebase instances
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
+        storageRef = storage.getReference();
 
         usernameEditText = view.findViewById(R.id.username);
         emailEditText = view.findViewById(R.id.email);
@@ -69,6 +79,8 @@ public class EditProfile extends Fragment {
         selectLocationButton = view.findViewById(R.id.select_location_button);
         updateButton = view.findViewById(R.id.update_button);
         backButton = view.findViewById(R.id.backBtn);
+        profileImage = view.findViewById(R.id.profile_image); // Profile image
+        editProfileImage = view.findViewById(R.id.edit_profile_image); // Edit icon
 
         // Get the current user
         FirebaseUser currentUser = auth.getCurrentUser();
@@ -84,6 +96,8 @@ public class EditProfile extends Fragment {
         // Load user profile data from Firestore
         loadUserProfile();
 
+        editProfileImage.setOnClickListener(v -> openImagePicker());
+
         selectLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -98,6 +112,12 @@ public class EditProfile extends Fragment {
 
         // Set up the update button
         updateButton.setOnClickListener(v -> updateUserProfile());
+    }
+
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        imagePickerLauncher.launch(intent);
     }
 
     private final ActivityResultLauncher<Intent> locationPickerLauncher = registerForActivityResult(
@@ -124,6 +144,42 @@ public class EditProfile extends Fragment {
     }
 
 
+    // Initialize the image picker launcher
+    private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    Uri selectedImageUri = result.getData().getData();
+                    uploadProfileImage(selectedImageUri);
+                }
+            }
+    );
+
+    private void uploadProfileImage(Uri imageUri) {
+        if (userEmail == null) {
+            Toast.makeText(getContext(), "User email not available!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        StorageReference profileImageRef = storageRef.child("profile_images/" + userEmail + ".jpg");
+        profileImageRef.putFile(imageUri)
+                .addOnSuccessListener(taskSnapshot -> profileImageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                    // Update the profile image in Firestore
+                    db.collection("users").document(userEmail)
+                            .update("profileImageUrl", uri.toString())
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(getContext(), "Profile image updated!", Toast.LENGTH_SHORT).show();
+                                profileImage.setImageURI(imageUri); // Update the ImageView
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(getContext(), "Failed to update Firestore: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                }))
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Failed to upload image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
     private void loadUserProfile() {
         if (userEmail == null) return;
 
@@ -147,6 +203,8 @@ public class EditProfile extends Fragment {
                     Toast.makeText(getContext(), "Failed to load user details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
+
 
     private void updateUserProfile() {
         // Retrieve updated data
@@ -219,6 +277,6 @@ public class EditProfile extends Fragment {
         }
     }
 
+
+
 }
-
-
