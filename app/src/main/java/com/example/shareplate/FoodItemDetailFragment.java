@@ -1,5 +1,7 @@
 package com.example.shareplate;
 
+import java.util.Map;
+import java.util.HashMap;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -388,31 +390,52 @@ public class FoodItemDetailFragment extends Fragment {
             return;
         }
 
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", "completed");
-        updates.put("receiverEmail", currentUser.getEmail());
+        // Create a new request document in the foodRequest collection
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, Object> requestData = new HashMap<>();
+        requestData.put("email", currentUser.getEmail());
+        requestData.put("itemId", item.getDocumentId());
+        requestData.put("timestamp", System.currentTimeMillis());
+        
+        db.collection("foodRequest")
+            .add(requestData)
+            .addOnSuccessListener(documentReference -> {
+                // After adding to foodRequest, update the original item's status
+                Map<String, Object> updates = new HashMap<>();
+                updates.put("status", "completed");
+                updates.put("receiverEmail", currentUser.getEmail());
 
-        DonationItemRepository repository = new DonationItemRepository();
-        repository.updateDonationWithFields(item.getDocumentId(), updates,
-                new DonationItemRepository.OnStatusUpdateListener() {
-                    @Override
-                    public void onUpdateSuccess() {
-                        if (getContext() != null) {
-                            Toast.makeText(getContext(), "Request accepted successfully", 
-                                    Toast.LENGTH_SHORT).show();
-                            refreshFoodDetails();
-                        }
-                    }
+                DonationItemRepository repository = new DonationItemRepository();
+                repository.updateDonationWithFields(item.getDocumentId(), updates,
+                        new DonationItemRepository.OnStatusUpdateListener() {
+                            @Override
+                            public void onUpdateSuccess() {
+                                if (getContext() != null) {
+                                    Toast.makeText(getContext(), "Request accepted successfully", 
+                                            Toast.LENGTH_SHORT).show();
+                                    refreshFoodDetails();
+                                    
+                                    // Broadcast the update
+                                    Intent refreshIntent = new Intent("profile.stats.updated");
+                                    LocalBroadcastManager.getInstance(requireContext())
+                                            .sendBroadcast(refreshIntent);
+                                }
+                            }
 
-                    @Override
-                    public void onUpdateFailure(Exception e) {
-                        if (getContext() != null) {
-                            Toast.makeText(getContext(),
-                                    "Failed to accept request: " + e.getMessage(),
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+                            @Override
+                            public void onUpdateFailure(Exception e) {
+                                if (getContext() != null) {
+                                    Toast.makeText(getContext(),
+                                            "Failed to accept request: " + e.getMessage(),
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(getContext(), "Failed to create request: " + e.getMessage(), 
+                        Toast.LENGTH_SHORT).show();
+            });
     }
 
     @Override

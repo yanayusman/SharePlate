@@ -1,5 +1,7 @@
 package com.example.shareplate;
 
+import java.util.Map;
+import java.util.HashMap;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -343,40 +345,67 @@ public class NonFoodItemDetail extends Fragment {
             return;
         }
 
-        DonationItemRepository repository = new DonationItemRepository();
-        repository.updateDonationStatus(item.getDocumentId(), "completed",
-                new DonationItemRepository.OnStatusUpdateListener() {
-                    @Override
-                    public void onUpdateSuccess() {
-                        if (getContext() != null) {
-                            // Update the UI to show completed status
-                            TextView itemStatus = getView().findViewById(R.id.detail_item_status);
-                            itemStatus.setVisibility(View.VISIBLE);
-                            itemStatus.setText("Status: Completed");
-                            itemStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(getContext(), "You must be logged in to request items", 
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-                            // Hide the complete button
-                            Button completeButton = getView().findViewById(R.id.completeButton);
-                            completeButton.setVisibility(View.GONE);
+        // Create a new request document in the foodRequest collection
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, Object> requestData = new HashMap<>();
+        requestData.put("email", currentUser.getEmail());
+        requestData.put("itemId", item.getDocumentId());
+        requestData.put("timestamp", System.currentTimeMillis());
+        
+        db.collection("foodRequest")
+            .add(requestData)
+            .addOnSuccessListener(documentReference -> {
+                DonationItemRepository repository = new DonationItemRepository();
+                repository.updateDonationStatus(item.getDocumentId(), "completed",
+                        new DonationItemRepository.OnStatusUpdateListener() {
+                            @Override
+                            public void onUpdateSuccess() {
+                                if (getContext() != null) {
+                                    // Update the UI to show completed status
+                                    TextView itemStatus = getView().findViewById(R.id.detail_item_status);
+                                    itemStatus.setVisibility(View.VISIBLE);
+                                    itemStatus.setText("Status : Completed");
+                                    itemStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
 
-                            // Hide the request button
-                            Button requestButton = getView().findViewById(R.id.requestButton);
-                            requestButton.setVisibility(View.GONE);
+                                    // Hide the complete button
+                                    Button completeButton = getView().findViewById(R.id.completeButton);
+                                    completeButton.setVisibility(View.GONE);
 
-                            Toast.makeText(getContext(),
-                                    "Your request is our command!", Toast.LENGTH_SHORT).show();
-                        }
-                    }
+                                    // Hide the request button
+                                    Button requestButton = getView().findViewById(R.id.requestButton);
+                                    requestButton.setVisibility(View.GONE);
 
-                    @Override
-                    public void onUpdateFailure(Exception e) {
-                        if (getContext() != null) {
-                            Toast.makeText(getContext(),
-                                    "Failed to request: " + e.getMessage(),
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+                                    Toast.makeText(getContext(),
+                                            "Thank you for donating!", Toast.LENGTH_SHORT).show();
+                                            
+                                    // Broadcast the update
+                                    Intent refreshIntent = new Intent("profile.stats.updated");
+                                    LocalBroadcastManager.getInstance(requireContext())
+                                            .sendBroadcast(refreshIntent);
+                                }
+                            }
+
+                            @Override
+                            public void onUpdateFailure(Exception e) {
+                                if (getContext() != null) {
+                                    Toast.makeText(getContext(),
+                                            "Failed to request: " + e.getMessage(),
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(getContext(), "Failed to create request: " + e.getMessage(), 
+                        Toast.LENGTH_SHORT).show();
+            });
     }
 
     @Override

@@ -63,6 +63,7 @@ public class ProfilePage extends Fragment {
     private StorageReference storageRef;
     private SwipeRefreshLayout swipeRefreshLayout;
     private FirebaseFirestore db;
+    private BroadcastReceiver statsUpdateReceiver;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -76,6 +77,37 @@ public class ProfilePage extends Fragment {
         userEmail = currentUser.getEmail();
         storage = FirebaseStorage.getInstance();
         storageRef = storage.getReference();
+
+        // Add this: Initialize the stats update receiver
+        statsUpdateReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction() != null && intent.getAction().equals("profile.stats.updated")) {
+                    // Refresh the profile stats
+                    fetchCurrentUserDetails();
+                }
+            }
+        };
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Register the receiver
+        if (getActivity() != null) {
+            LocalBroadcastManager.getInstance(getActivity())
+                    .registerReceiver(statsUpdateReceiver, new IntentFilter("profile.stats.updated"));
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Unregister the receiver
+        if (getActivity() != null) {
+            LocalBroadcastManager.getInstance(getActivity())
+                    .unregisterReceiver(statsUpdateReceiver);
+        }
     }
 
     @Nullable
