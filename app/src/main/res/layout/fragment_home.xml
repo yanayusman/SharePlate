@@ -163,11 +163,56 @@
         android:visibility="visible">
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/filterButtonsLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/placeholder"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/allFilterButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="4"
+            android:layout_marginEnd="4dp"
+            android:text="All"
+            android:textColor="@color/button_green"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="@color/button_green"
+            app:cornerRadius="100dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/activeFilterButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="7"
+            android:layout_marginHorizontal="4dp"
+            android:text="Active"
+            android:textColor="@color/button_green"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="@color/button_green"
+            app:cornerRadius="100dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/completedFilterButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="10"
+            android:layout_marginStart="4dp"
+            android:text="Completed"
+            android:textColor="@color/button_green"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="@color/button_green"
+            app:cornerRadius="100dp"/>
+    </LinearLayout>
+
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/placeholder">
+        android:layout_below="@id/filterButtonsLayout">
 
         <ScrollView
             android:layout_width="match_parent"
