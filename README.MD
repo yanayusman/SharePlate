@@ -5,13 +5,12 @@ SharePlate is an Android application built with modern Android development pract
 ## Features
 
 - Modern Material Design UI
-- Custom gradient animations and backgrounds
 - Responsive layouts using ConstraintLayout
 - User authentication system (Login/Register flow)
 
 ## Tech Stack
 
-- Kotlin
+- Java
 - Android SDK
 - Gradle Build System
 - Firebase Integration (Google Services)
