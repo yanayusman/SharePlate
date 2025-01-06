@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:orientation="vertical">
 
     <!-- Toolbar -->
     <androidx.appcompat.widget.Toolbar
@@ -122,7 +121,6 @@
                 </LinearLayout>
 
 
-
                 <!-- Statistics Section -->
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -135,97 +133,112 @@
 
                     <!-- Food Donated -->
                     <LinearLayout
-                        android:id="@+id/food_donated"
                         android:layout_width="0dp"
                         android:layout_height="140dp"
                         android:layout_margin="8dp"
                         android:layout_weight="1"
+                        android:background="@drawable/rounded_corners"
                         android:elevation="4dp"
                         android:gravity="center"
-                        android:background="@drawable/rounded_corners"
                         android:orientation="vertical"
                         android:padding="8dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:fontFamily="@font/poppins"
-                            android:text="Donated"
-                            android:textColor="#000000"
-                            android:textSize="14sp" />
-
                         <LinearLayout
-                            android:layout_width="150dp"
+                            android:id="@+id/food_donated"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center">
+                            android:gravity="center"
+                            android:orientation="vertical">
 
-                            <!-- Icon -->
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/donate_icon"
-                                android:layout_marginEnd="25dp" />
-
-                            <!-- TextView -->
                             <TextView
-                                android:id="@+id/donated_count"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="@font/poppins_bold"
-                                android:text="0"
-                                android:textColor="#228B22"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_marginBottom="4dp"
+                                android:fontFamily="@font/poppins"
+                                android:text="Donated"
+                                android:textColor="#000000"
+                                android:textSize="14sp" />
+
+                            <LinearLayout
+                                android:layout_width="150dp"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <!-- Icon -->
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_marginEnd="25dp"
+                                    android:src="@drawable/donate_icon" />
+
+                                <!-- TextView -->
+                                <TextView
+                                    android:id="@+id/donated_count"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:text="0"
+                                    android:textColor="#228B22"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
                         </LinearLayout>
-
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:fontFamily="@font/poppins"
-                            android:text="Requested"
-                            android:textColor="#000000"
-                            android:textSize="14sp" />
 
                         <LinearLayout
-                            android:layout_width="150dp"
+                            android:id="@+id/food_requested"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center">
+                            android:gravity="center"
+                            android:orientation="vertical">
 
-                            <!-- Icon -->
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/receive_icon"
-                                android:layout_marginEnd="25dp" />
-
-                            <!-- TextView -->
                             <TextView
-                                android:id="@+id/requested_count"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="@font/poppins_bold"
-                                android:text="0"
-                                android:textColor="#228B22"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_marginBottom="4dp"
+                                android:fontFamily="@font/poppins"
+                                android:text="Requested"
+                                android:textColor="#000000"
+                                android:textSize="14sp" />
+
+                            <LinearLayout
+                                android:layout_width="150dp"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <!-- Icon -->
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_marginEnd="25dp"
+                                    android:src="@drawable/receive_icon" />
+
+                                <!-- TextView -->
+                                <TextView
+                                    android:id="@+id/requested_count"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:text="0"
+                                    android:textColor="#228B22"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
                         </LinearLayout>
+
                     </LinearLayout>
 
                     <!-- Food Requested -->
                     <LinearLayout
-                        android:id="@+id/food_requested"
                         android:layout_width="0dp"
                         android:layout_height="140dp"
                         android:layout_margin="8dp"
                         android:layout_weight="1"
+                        android:background="@drawable/rounded_corners"
                         android:elevation="4dp"
                         android:gravity="center"
-                        android:background="@drawable/rounded_corners"
                         android:orientation="vertical"
                         android:padding="8dp">
 
@@ -236,36 +249,36 @@
                             android:layout_height="wrap_content"
                             android:orientation="vertical">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:fontFamily="@font/poppins"
-                            android:text="Campaigns Joined"
-                            android:textColor="#000000"
-                            android:textSize="14sp" />
-
-                        <LinearLayout
-                            android:layout_width="150dp"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/campaign_icon"
-                                android:layout_marginEnd="25dp" />
-
                             <TextView
-                                android:id="@+id/campaign_count"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="@font/poppins_bold"
-                                android:text="0"
-                                android:textColor="#228B22"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_marginBottom="4dp"
+                                android:fontFamily="@font/poppins"
+                                android:text="Campaigns Joined"
+                                android:textColor="#000000"
+                                android:textSize="14sp" />
+
+                            <LinearLayout
+                                android:layout_width="150dp"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_marginEnd="25dp"
+                                    android:src="@drawable/campaign_icon" />
+
+                                <TextView
+                                    android:id="@+id/campaign_count"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:text="0"
+                                    android:textColor="#228B22"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
                             </LinearLayout>
                         </LinearLayout>
 
@@ -276,36 +289,36 @@
                             android:layout_height="wrap_content"
                             android:orientation="vertical">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:fontFamily="@font/poppins"
-                            android:text="Volunteers Joined"
-                            android:textColor="#000000"
-                            android:textSize="14sp" />
-
-                        <LinearLayout
-                            android:layout_width="150dp"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/volunteer_icon"
-                                android:layout_marginEnd="25dp" />
-
                             <TextView
-                                android:id="@+id/volunteer_count"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="@font/poppins_bold"
-                                android:text="0"
-                                android:textColor="#228B22"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_marginBottom="4dp"
+                                android:fontFamily="@font/poppins"
+                                android:text="Volunteers Joined"
+                                android:textColor="#000000"
+                                android:textSize="14sp" />
+
+                            <LinearLayout
+                                android:layout_width="150dp"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_marginEnd="25dp"
+                                    android:src="@drawable/volunteer_icon" />
+
+                                <TextView
+                                    android:id="@+id/volunteer_count"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:text="0"
+                                    android:textColor="#228B22"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
                             </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
