@@ -52,6 +52,8 @@ public class DonationItemRepository {
                             String status = document.getString("status");
                             String ownerProfileImageUrl = document.getString("ownerProfileImageUrl");
                             String donateType = document.getString("donateType");
+                            String feedback = document.getString("feedback");
+                            String receiverEmail = document.getString("receiverEmail");
 
                             int imageResourceId = R.drawable.placeholder_image;
                             Long resourceIdLong = document.getLong("imageResourceID");
@@ -82,6 +84,8 @@ public class DonationItemRepository {
                                 // Set the document ID and status
                                 item.setDocumentId(document.getId());
                                 item.setStatus(status != null ? status : "active");
+                                item.setFeedback(feedback);
+                                item.setReceiverEmail(receiverEmail);
                                 if (createdAt != null) {
                                     item.setCreatedAt(createdAt);
                                 }
@@ -205,5 +209,16 @@ public class DonationItemRepository {
     public interface OnStatusUpdateListener {
         void onUpdateSuccess();
         void onUpdateFailure(Exception e);
+    }
+
+    public void updateDonationWithFields(String documentId, Map<String, Object> updates, 
+            OnStatusUpdateListener listener) {
+        db.collection(COLLECTION_NAME)
+                .document(documentId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    listener.onUpdateSuccess();
+                })
+                .addOnFailureListener(listener::onUpdateFailure);
     }
 } 

@@ -31,7 +31,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class RequestItemDetailFragment extends Fragment {
-    private static final String ARG_FOOD_ITEM = "food_item";
+    public static final String ARG_REQUEST_ITEM = "request_item";
     private String ownerUsername;
     private BroadcastReceiver profileUpdateReceiver;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -41,7 +41,7 @@ public class RequestItemDetailFragment extends Fragment {
     public static RequestItemDetailFragment newInstance(RequestFood item) {
         RequestItemDetailFragment fragment = new RequestItemDetailFragment();
         Bundle args = new Bundle();
-        args.putSerializable(ARG_FOOD_ITEM, item);
+        args.putSerializable(ARG_REQUEST_ITEM, item);
         fragment.setArguments(args);
         return fragment;
     }
@@ -58,7 +58,7 @@ public class RequestItemDetailFragment extends Fragment {
 
         // Get the DonationItem from arguments once
         if (getArguments() != null) {
-            currentRequestItem = (RequestFood) getArguments().getSerializable(ARG_FOOD_ITEM);
+            currentRequestItem = (RequestFood) getArguments().getSerializable(ARG_REQUEST_ITEM);
         }
         if (currentRequestItem == null) {
             return;
@@ -306,7 +306,7 @@ public class RequestItemDetailFragment extends Fragment {
 
                 // Get the current donation item
                 DonationItem currentItem = getArguments() != null ?
-                        (DonationItem) getArguments().getSerializable(ARG_FOOD_ITEM) : null;
+                        (DonationItem) getArguments().getSerializable(ARG_REQUEST_ITEM) : null;
 
                 // Update the profile image if this detail view is for the updated user's donation
                 if (currentItem != null && currentItem.getEmail().equals(ownerEmail)) {
@@ -480,7 +480,7 @@ public class RequestItemDetailFragment extends Fragment {
     private void loadOwnerProfileImage(String ownerUsername, ImageView ownerProfileImage) {
         // Get the DonationItem from arguments
         if (getArguments() != null) {
-            RequestFood donationItem = (RequestFood) getArguments().getSerializable(ARG_FOOD_ITEM);
+            RequestFood donationItem = (RequestFood) getArguments().getSerializable(ARG_REQUEST_ITEM);
             if (donationItem != null && donationItem.getOwnerProfileImageUrl() != null
                     && !donationItem.getOwnerProfileImageUrl().isEmpty()) {
                 // Load the profile image using the stored URL

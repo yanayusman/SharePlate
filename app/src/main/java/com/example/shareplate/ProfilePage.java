@@ -166,6 +166,17 @@ public class ProfilePage extends Fragment {
             startActivity(browserIntent);
         });
 
+        // Add click listeners in onViewCreated
+        View donatedSection = view.findViewById(R.id.food_donated);
+        View requestedSection = view.findViewById(R.id.food_requested);
+        View campaignSection = view.findViewById(R.id.campaign_volunteer);
+        View volunteerSection = view.findViewById(R.id.volunteer_section);
+
+        donatedSection.setOnClickListener(v -> openHistory("donated"));
+        requestedSection.setOnClickListener(v -> openHistory("requested"));
+        campaignSection.setOnClickListener(v -> openHistory("campaigns"));
+        volunteerSection.setOnClickListener(v -> openHistory("volunteering"));
+
         return view;
     }
 
@@ -740,6 +751,15 @@ public class ProfilePage extends Fragment {
                 }
             });
         }
+    }
+
+    private void openHistory(String type) {
+        UserHistoryFragment historyFragment = UserHistoryFragment.newInstance(type);
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, historyFragment)
+                .addToBackStack(null)
+                .commit();
     }
 
 }

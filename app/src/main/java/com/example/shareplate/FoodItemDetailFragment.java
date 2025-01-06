@@ -11,6 +11,8 @@ import android.widget.Toast;
 import android.view.ViewOutlineProvider;
 import android.graphics.Outline;
 import android.app.AlertDialog;
+import java.util.Map;
+import java.util.HashMap;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,9 +31,12 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.util.Log;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import android.widget.EditText;
+import android.text.InputType;
+import android.view.Gravity;
 
 public class FoodItemDetailFragment extends Fragment {
-    private static final String ARG_FOOD_ITEM = "food_item";
+    public static final String ARG_DONATION_ITEM = "donation_item";
 
     private BroadcastReceiver profileUpdateReceiver;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -42,7 +47,7 @@ public class FoodItemDetailFragment extends Fragment {
     public static FoodItemDetailFragment newInstance(DonationItem item) {
         FoodItemDetailFragment fragment = new FoodItemDetailFragment();
         Bundle args = new Bundle();
-        args.putSerializable(ARG_FOOD_ITEM, item);
+        args.putSerializable(ARG_DONATION_ITEM, item);
         fragment.setArguments(args);
         return fragment;
     }
@@ -59,7 +64,7 @@ public class FoodItemDetailFragment extends Fragment {
 
         // Get the DonationItem from arguments once
         if (getArguments() != null) {
-            currentDonationItem = (DonationItem) getArguments().getSerializable(ARG_FOOD_ITEM);
+            currentDonationItem = (DonationItem) getArguments().getSerializable(ARG_DONATION_ITEM);
         }
         if (currentDonationItem == null) {
             return;
@@ -160,6 +165,10 @@ public class FoodItemDetailFragment extends Fragment {
                             DonationItem refreshedItem = documentSnapshot.toObject(DonationItem.class);
                             if (refreshedItem != null) {
                                 refreshedItem.setDocumentId(documentSnapshot.getId());
+                                String feedback = documentSnapshot.getString("feedback");
+                                String receiverEmail = documentSnapshot.getString("receiverEmail");
+                                refreshedItem.setFeedback(feedback);
+                                refreshedItem.setReceiverEmail(receiverEmail);
                                 currentDonationItem = refreshedItem;
 
                                 // Update UI with fresh data
@@ -197,6 +206,9 @@ public class FoodItemDetailFragment extends Fragment {
         TextView itemStatus = view.findViewById(R.id.detail_item_status);
         TextView itemCreatedAt = view.findViewById(R.id.detail_item_created_at);
         ImageView ownerProfileImage = view.findViewById(R.id.owner_profile_image);
+        TextView feedbackTitle = view.findViewById(R.id.feedback_section_title);
+        TextView feedbackAuthor = view.findViewById(R.id.feedback_author);
+        TextView feedbackContent = view.findViewById(R.id.feedback_content);
 
         // Add click listener to the image
         itemImage.setOnClickListener(v -> {
@@ -283,8 +295,43 @@ public class FoodItemDetailFragment extends Fragment {
         // Show creation date
         itemCreatedAt.setText("Posted on " + item.getFormattedCreationDate());
 
+        // Always check and update feedback visibility
+        if (item != null && item.getFeedback() != null && !item.getFeedback().trim().isEmpty()) {
+            feedbackTitle.setVisibility(View.VISIBLE);
+            feedbackAuthor.setVisibility(View.VISIBLE);
+            feedbackContent.setVisibility(View.VISIBLE);
+            feedbackContent.setText(item.getFeedback());
+            
+            // Get and display receiver's username
+            if (item.getReceiverEmail() != null) {
+                FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(item.getReceiverEmail())
+                        .get()
+                        .addOnSuccessListener(documentSnapshot -> {
+                            if (documentSnapshot.exists()) {
+                                String receiverUsername = documentSnapshot.getString("username");
+                                feedbackAuthor.setText("From: " + (receiverUsername != null ? receiverUsername : "Anonymous"));
+                            } else {
+                                feedbackAuthor.setText("From: Anonymous");
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e("Feedback", "Error fetching receiver username", e);
+                            feedbackAuthor.setText("From: Anonymous");
+                        });
+            }
+            Log.d("Feedback", "Showing feedback: " + item.getFeedback());
+        } else {
+            feedbackTitle.setVisibility(View.GONE);
+            feedbackAuthor.setVisibility(View.GONE);
+            feedbackContent.setVisibility(View.GONE);
+            Log.d("Feedback", "No feedback to show");
+        }
+
         // Update buttons visibility based on ownership and status
         updateButtonsVisibility(view, item);
+        updateFeedbackButtonVisibility(view, item);
     }
 
     private void updateButtonsVisibility(View view, DonationItem item) {
@@ -334,28 +381,26 @@ public class FoodItemDetailFragment extends Fragment {
             return;
         }
 
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(getContext(), "You must be logged in to request items", 
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", "completed");
+        updates.put("receiverEmail", currentUser.getEmail());
+
         DonationItemRepository repository = new DonationItemRepository();
-        repository.updateDonationStatus(item.getDocumentId(), "completed",
+        repository.updateDonationWithFields(item.getDocumentId(), updates,
                 new DonationItemRepository.OnStatusUpdateListener() {
                     @Override
                     public void onUpdateSuccess() {
                         if (getContext() != null) {
-                            // Update the UI to show completed status
-                            TextView itemStatus = getView().findViewById(R.id.detail_item_status);
-                            itemStatus.setVisibility(View.VISIBLE);
-                            itemStatus.setText("Status: Completed");
-                            itemStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
-
-                            // Hide the complete button
-                            Button completeButton = getView().findViewById(R.id.completeButton);
-                            completeButton.setVisibility(View.GONE);
-
-                            // Hide the request button
-                            Button requestButton = getView().findViewById(R.id.requestButton);
-                            requestButton.setVisibility(View.GONE);
-
-                            Toast.makeText(getContext(),
-                                    "Your request is our command!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Request accepted successfully", 
+                                    Toast.LENGTH_SHORT).show();
+                            refreshFoodDetails();
                         }
                     }
 
@@ -363,7 +408,7 @@ public class FoodItemDetailFragment extends Fragment {
                     public void onUpdateFailure(Exception e) {
                         if (getContext() != null) {
                             Toast.makeText(getContext(),
-                                    "Failed to request: " + e.getMessage(),
+                                    "Failed to accept request: " + e.getMessage(),
                                     Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -383,7 +428,7 @@ public class FoodItemDetailFragment extends Fragment {
 
                 // Get the current donation item
                 DonationItem currentItem = getArguments() != null ?
-                        (DonationItem) getArguments().getSerializable(ARG_FOOD_ITEM) : null;
+                        (DonationItem) getArguments().getSerializable(ARG_DONATION_ITEM) : null;
 
                 // Update the profile image if this detail view is for the updated user's donation
                 if (currentItem != null && currentItem.getEmail().equals(ownerEmail)) {
@@ -515,7 +560,7 @@ public class FoodItemDetailFragment extends Fragment {
     private void loadOwnerProfileImage(String ownerUsername, ImageView ownerProfileImage) {
         // Get the DonationItem from arguments
         if (getArguments() != null) {
-            DonationItem donationItem = (DonationItem) getArguments().getSerializable(ARG_FOOD_ITEM);
+            DonationItem donationItem = (DonationItem) getArguments().getSerializable(ARG_DONATION_ITEM);
             if (donationItem != null && donationItem.getOwnerProfileImageUrl() != null
                     && !donationItem.getOwnerProfileImageUrl().isEmpty()) {
                 // Load the profile image using the stored URL
@@ -546,5 +591,90 @@ public class FoodItemDetailFragment extends Fragment {
                 .replace(R.id.fragment_container, editFragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    private void updateFeedbackButtonVisibility(View view, DonationItem item) {
+        Button feedbackButton = view.findViewById(R.id.feedbackButton);
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        
+        if (currentUser != null && item != null && "completed".equals(item.getStatus())) {
+            // Show feedback button only for the receiver and if no feedback exists yet
+            if (currentUser.getEmail().equals(item.getReceiverEmail()) && 
+                (item.getFeedback() == null || item.getFeedback().isEmpty())) {
+                feedbackButton.setVisibility(View.VISIBLE);
+                feedbackButton.setOnClickListener(v -> showFeedbackDialog(item));
+            } else {
+                feedbackButton.setVisibility(View.GONE);
+            }
+        } else {
+            feedbackButton.setVisibility(View.GONE);
+        }
+    }
+
+    private void showFeedbackDialog(DonationItem item) {
+        EditText feedbackInput = new EditText(requireContext());
+        feedbackInput.setHint("Enter your feedback");
+        feedbackInput.setMinLines(3);
+        feedbackInput.setGravity(Gravity.TOP | Gravity.START);
+        feedbackInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Leave Feedback")
+                .setView(feedbackInput)
+                .setPositiveButton("Submit", (dialogInterface, i) -> {
+                    String feedback = feedbackInput.getText().toString().trim();
+                    if (!feedback.isEmpty()) {
+                        submitFeedback(item, feedback);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .create();
+
+        dialog.show();
+    }
+
+    private void submitFeedback(DonationItem item, String feedback) {
+        FirebaseFirestore.getInstance()
+                .collection("allDonationItems")
+                .document(item.getDocumentId())
+                .update("feedback", feedback)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(getContext(), "Feedback submitted successfully", Toast.LENGTH_SHORT).show();
+                    // Update the current item with the new feedback
+                    item.setFeedback(feedback);
+                    // Update the UI
+                    View view = getView();
+                    if (view != null) {
+                        TextView feedbackTitle = view.findViewById(R.id.feedback_section_title);
+                        TextView feedbackAuthor = view.findViewById(R.id.feedback_author);
+                        TextView feedbackContent = view.findViewById(R.id.feedback_content);
+                        feedbackTitle.setVisibility(View.VISIBLE);
+                        feedbackAuthor.setVisibility(View.VISIBLE);
+                        feedbackContent.setVisibility(View.VISIBLE);
+                        feedbackContent.setText(feedback);
+                        
+                        // Get current user's username
+                        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                        if (currentUser != null) {
+                            FirebaseFirestore.getInstance()
+                                    .collection("users")
+                                    .document(currentUser.getEmail())
+                                    .get()
+                                    .addOnSuccessListener(documentSnapshot -> {
+                                        if (documentSnapshot.exists()) {
+                                            String username = documentSnapshot.getString("username");
+                                            feedbackAuthor.setText("From: " + (username != null ? username : "Anonymous"));
+                                        }
+                                    });
+                        }
+                    }
+                    // Hide the feedback button
+                    Button feedbackButton = getView().findViewById(R.id.feedbackButton);
+                    feedbackButton.setVisibility(View.GONE);
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Failed to submit feedback: " + e.getMessage(), 
+                            Toast.LENGTH_SHORT).show();
+                });
     }
 } 

@@ -113,6 +113,37 @@
             android:drawablePadding="8dp"/>
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/feedback_section_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Feedback"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/feedback_author"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/gray"
+        android:layout_marginBottom="4dp"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/feedback_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:background="@drawable/feedback_background"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone"/>
+
     <Button
         android:id="@+id/editButton"
         android:layout_width="match_parent"
@@ -153,6 +184,17 @@
         android:text="Request Food"
         android:textColor="@color/white"
         android:backgroundTint="@color/button_green"
+        android:padding="12dp"/>
+
+    <Button
+        android:id="@+id/feedbackButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Leave Feedback"
+        android:textColor="@color/white"
+        android:backgroundTint="#FF9800"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp"
         android:padding="12dp"/>
 
 </LinearLayout>

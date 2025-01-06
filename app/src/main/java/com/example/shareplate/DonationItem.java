@@ -9,6 +9,8 @@ public class DonationItem implements Serializable {
     private String name,foodCategory, description, category, expiredDate, quantity, pickupTime, location, imageUrl, documentId, status, ownerProfileImageUrl, donateType, email;
     private int imageResourceId;
     private long createdAt;
+    private String feedback;
+    private String receiverEmail;
 
     // Constructor
     public DonationItem() {
@@ -129,5 +131,21 @@ public class DonationItem implements Serializable {
 
     public void setEmail(String email){
         this.email = email;
+    }
+
+    public String getFeedback() {
+        return feedback;
+    }
+
+    public void setFeedback(String feedback) {
+        this.feedback = feedback;
+    }
+
+    public String getReceiverEmail() {
+        return receiverEmail;
+    }
+
+    public void setReceiverEmail(String receiverEmail) {
+        this.receiverEmail = receiverEmail;
     }
 }

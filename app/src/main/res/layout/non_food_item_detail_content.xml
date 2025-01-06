@@ -155,4 +155,15 @@
         android:backgroundTint="@color/button_green"
         android:padding="12dp"/>
 
+    <Button
+        android:id="@+id/feedbackButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Leave Feedback"
+        android:textColor="@color/white"
+        android:backgroundTint="#FF9800"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp"
+        android:padding="12dp"/>
+
 </LinearLayout>
