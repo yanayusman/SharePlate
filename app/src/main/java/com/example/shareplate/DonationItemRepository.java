@@ -116,33 +116,33 @@ public class DonationItemRepository {
         String ownerProfileImageUrl = currentUser.getPhotoUrl() != null ?
                 currentUser.getPhotoUrl().toString() : "";
 
-                    // Create donation data map
-                    Map<String, Object> donationData = new HashMap<>();
-                    donationData.put("name", item.getName());
-                    donationData.put("foodCategory", item.getFoodCategory());
-                    donationData.put("expiredDate", item.getExpiredDate());
-                    donationData.put("quantity", item.getQuantity());
-                    donationData.put("pickupTime", item.getPickupTime());
-                    donationData.put("location", item.getLocation());
-                    donationData.put("imageResourceId", item.getImageResourceId());
-                    donationData.put("imageUrl", item.getImageUrl());
-                    donationData.put("email", userEmail);
-                    donationData.put("ownerProfileImageUrl", ownerProfileImageUrl);
-                    donationData.put("status", "active");
-                    donationData.put("createdAt", System.currentTimeMillis());
-                    donationData.put("donateType", "Food");
+        // Create donation data map
+        Map<String, Object> donationData = new HashMap<>();
+        donationData.put("name", item.getName());
+        donationData.put("foodCategory", item.getFoodCategory());
+        donationData.put("expiredDate", item.getExpiredDate());
+        donationData.put("quantity", item.getQuantity());
+        donationData.put("pickupTime", item.getPickupTime());
+        donationData.put("location", item.getLocation());
+        donationData.put("imageResourceId", item.getImageResourceId());
+        donationData.put("imageUrl", item.getImageUrl());
+        donationData.put("email", userEmail);
+        donationData.put("ownerProfileImageUrl", ownerProfileImageUrl);
+        donationData.put("status", "active");
+        donationData.put("createdAt", System.currentTimeMillis());
+        donationData.put("donateType", "Food");
 
-                    // Add to Firestore
-                    db.collection(COLLECTION_NAME)
-                            .add(donationData)
-                            .addOnSuccessListener(documentReference -> {
-                                Log.d(TAG, "DocumentSnapshot written with ID: " + documentReference.getId());
-                                listener.onDonationSuccess();
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.w(TAG, "Error adding document", e);
-                                listener.onDonationFailure(e);
-                            });
+        // Add to Firestore
+        db.collection(COLLECTION_NAME)
+                .add(donationData)
+                .addOnSuccessListener(documentReference -> {
+                    Log.d(TAG, "DocumentSnapshot written with ID: " + documentReference.getId());
+                    listener.onDonationSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Log.w(TAG, "Error adding document", e);
+                    listener.onDonationFailure(e);
+                });
     }
 
 

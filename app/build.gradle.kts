@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
     implementation(libs.places)
+    implementation(libs.firebase.messaging)
 
     // Testing
     testImplementation(libs.junit)
@@ -99,4 +100,6 @@ dependencies {
     
      // LocalBroadcastManager
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+
+    implementation ("com.google.firebase:firebase-messaging:24.1.0")
 }
