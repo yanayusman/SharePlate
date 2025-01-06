@@ -54,7 +54,7 @@ public class ProfilePage extends Fragment {
     private final String SUBCOLLECTION_USER = "joinedEvents";
     private ImageView profileImage, notificationIV;
     private TextView usernameTextView, donatedCountTV, requestedCountTV, campaignsCountTV, volunteerCountTV;
-    private MaterialButton editProfileButton, rateAppButton, termsConditionButton, signOutButton;
+    private MaterialButton editProfileButton, rateAppButton, termsConditionButton, signOutButton, resetPass;
     private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
     private String userEmail;
@@ -82,6 +82,9 @@ public class ProfilePage extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_profile_page, container, false);
+
+
+
 
         Log.d(TAG, "onCreateView: Initializing views");
 
@@ -126,8 +129,11 @@ public class ProfilePage extends Fragment {
         campaignsCountTV = view.findViewById(R.id.campaign_count);
         volunteerCountTV = view.findViewById(R.id.volunteer_count);
         notificationIV = view.findViewById(R.id.menu_icon2);
+        resetPass = view.findViewById(R.id.resetPassButton);
 
         fetchCurrentUserDetails();
+
+        setResetPassClickListener();
 
         notificationIV.setOnClickListener(v -> {
             requireActivity().getSupportFragmentManager()
@@ -218,6 +224,16 @@ public class ProfilePage extends Fragment {
                         Log.e("FirestoreError", "Error fetching username", e);
                     });
         }
+    }
+
+    /**
+     * Set a click listener for the "Reset Password" button.
+     */
+    private void setResetPassClickListener() {
+        resetPass.setOnClickListener(v -> getParentFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, new ResetPasswordFragment())
+                .addToBackStack(null)
+                .commit());
     }
 
     private void fetchDonatedCount(String username) {

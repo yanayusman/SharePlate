@@ -121,6 +121,8 @@
 
                 </LinearLayout>
 
+
+
                 <!-- Statistics Section -->
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -354,6 +356,23 @@
                         android:textColor="@color/black"
                         app:backgroundTint="#FFFFFF"
                         app:icon="@drawable/terms_condition"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp"
+                        app:iconTint="#000000"
+                        app:strokeColor="#000000"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/resetPassButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="32dp"
+                        android:layout_marginEnd="32dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="Reset Password"
+                        android:textColor="@color/black"
+                        app:backgroundTint="#FFFFFF"
+                        app:icon="@drawable/privacy_policy"
                         app:iconGravity="textStart"
                         app:iconPadding="8dp"
                         app:iconTint="#000000"
