@@ -45,10 +45,8 @@ endLine: 18
 
 The app features a clean, modern UI with:
 - Circular logo container
-- Gradient background
 - Bottom sheet design
 - Material Design buttons
-- Custom text styling
 
 The main layout can be found in:
 
