@@ -238,6 +238,7 @@ public class HomeFragment extends Fragment {
                                     userData.put("username", "");
                                     userData.put("location", "");
                                     userData.put("phoneNumber", "");
+                                    userData.put("profileImage", "");
 
                                     db.collection("users")
                                             .document(email)

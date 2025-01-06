@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -24,6 +25,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.bumptech.glide.Glide;
 import com.google.android.gms.common.api.Status;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.widget.Autocomplete;
@@ -52,6 +54,7 @@ public class EditProfile extends Fragment {
     // private ActivityResultLauncher<Intent> imagePickerLauncher;
     private String userEmail;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private ProgressBar loadingSpinner;
     private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
 
     @Nullable
@@ -142,8 +145,6 @@ public class EditProfile extends Fragment {
 
         locationPickerLauncher.launch(intent);
     }
-
-
     // Initialize the image picker launcher
     private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -161,22 +162,39 @@ public class EditProfile extends Fragment {
             return;
         }
 
+        // Show the loading spinner
+        if (loadingSpinner != null) {
+            loadingSpinner.setVisibility(View.VISIBLE);
+        }
+
         StorageReference profileImageRef = storageRef.child("profile_images/" + userEmail + ".jpg");
         profileImageRef.putFile(imageUri)
                 .addOnSuccessListener(taskSnapshot -> profileImageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                     // Update the profile image in Firestore
                     db.collection("users").document(userEmail)
-                            .update("profileImageUrl", uri.toString())
+                            .update("profileImage", uri.toString())
                             .addOnSuccessListener(aVoid -> {
                                 Toast.makeText(getContext(), "Profile image updated!", Toast.LENGTH_SHORT).show();
-                                profileImage.setImageURI(imageUri); // Update the ImageView
+                                Glide.with(this)
+                                        .load(uri.toString())
+                                        .circleCrop()
+                                        .into(profileImage); // Update the ImageView immediately
                             })
                             .addOnFailureListener(e -> {
                                 Toast.makeText(getContext(), "Failed to update Firestore: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnCompleteListener(task -> {
+                                // Hide the loading spinner
+                                if (loadingSpinner != null) {
+                                    loadingSpinner.setVisibility(View.GONE);
+                                }
                             });
                 }))
                 .addOnFailureListener(e -> {
                     Toast.makeText(getContext(), "Failed to upload image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (loadingSpinner != null) {
+                        loadingSpinner.setVisibility(View.GONE);
+                    }
                 });
     }
 
@@ -191,10 +209,23 @@ public class EditProfile extends Fragment {
                         String username = documentSnapshot.getString("username");
                         String phoneNumber = documentSnapshot.getString("phoneNumber");
                         String location = documentSnapshot.getString("location");
+                        String profileImageUrl = documentSnapshot.getString("profileImage"); // Fetch profile image URL
 
                         usernameEditText.setText(username != null ? username : "");
                         phoneNumberEditText.setText(phoneNumber != null ? phoneNumber : "");
                         locationDisplay.setText(location != null ? location : "");
+
+                        // Load profile image using Glide
+                        if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
+                            Glide.with(this)
+                                    .load(profileImageUrl)
+                                    .circleCrop()
+                                    .placeholder(R.drawable.profile) // Default profile image placeholder
+                                    .into(profileImage);
+                        } else {
+                            // Use a default profile image if no URL is available
+                            profileImage.setImageResource(R.drawable.profile);
+                        }
                     } else {
                         Toast.makeText(getContext(), "No profile data found. Please update your details.", Toast.LENGTH_SHORT).show();
                     }
@@ -203,8 +234,6 @@ public class EditProfile extends Fragment {
                     Toast.makeText(getContext(), "Failed to load user details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
-
-
 
     private void updateUserProfile() {
         // Retrieve updated data
@@ -276,7 +305,4 @@ public class EditProfile extends Fragment {
             }
         }
     }
-
-
-
 }

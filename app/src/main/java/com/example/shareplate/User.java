@@ -1,9 +1,9 @@
 package com.example.shareplate;
 
 public class User {
-    private String username, email, phoneNumber, favourite, eventName, eventType, eventDate, eventTime, eventLocation;
+    private String username, email, phoneNumber, favourite, eventName, eventType, eventDate, eventTime, eventLocation, ownerImg;
 
-    public User(String username, String email, String phoneNumber, String eventName, String eventType, String eventDate, String eventTime, String eventLocation) {
+    public User(String username, String email, String phoneNumber, String eventName, String eventType, String eventDate, String eventTime, String eventLocation, String ownerProfileImg) {
         this.username = username;
         this.email = email;
         this.phoneNumber = phoneNumber;
@@ -12,6 +12,7 @@ public class User {
         this.eventDate = eventDate;
         this.eventTime = eventTime;
         this.eventLocation = eventLocation;
+        this.ownerImg = ownerProfileImg;
     }
 
     public String getUsername(){ return username; }
@@ -23,6 +24,7 @@ public class User {
     public String getEventDate(){ return eventDate; }
     public String getEventTime(){ return eventTime; }
     public String getEventLocation(){ return eventLocation; }
+    public String getOwnerImg(){ return ownerImg; }
 
     public void setUsername(String username){
         this.username = username;
@@ -58,5 +60,9 @@ public class User {
 
     public void setEventLocation(String location){
         this.eventLocation = location;
+    }
+
+    public void setOwnerImg(String ownerImg){
+        this.ownerImg = ownerImg;
     }
 }
