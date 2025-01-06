@@ -77,7 +77,7 @@ public class EditProfile extends Fragment {
         usernameEditText = view.findViewById(R.id.username);
         emailEditText = view.findViewById(R.id.email);
         phoneNumberEditText = view.findViewById(R.id.phone_number);
-        passwordEditText = view.findViewById(R.id.password);
+        //passwordEditText = view.findViewById(R.id.password);
         locationDisplay = view.findViewById(R.id.location_display);
         selectLocationButton = view.findViewById(R.id.select_location_button);
         updateButton = view.findViewById(R.id.update_button);
@@ -239,7 +239,7 @@ public class EditProfile extends Fragment {
         // Retrieve updated data
         String username = usernameEditText.getText().toString().trim();
         String phoneNumber = phoneNumberEditText.getText().toString().trim();
-        String newPassword = passwordEditText.getText().toString().trim();
+     //   String newPassword = passwordEditText.getText().toString().trim();
         String location = locationDisplay.getText().toString().trim();
 
         // Validate input fields
@@ -291,18 +291,18 @@ public class EditProfile extends Fragment {
                     Toast.makeText(getContext(), "Failed to fetch user details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
 
-        // Update password in FirebaseAuth if provided
-        if (!newPassword.isEmpty()) {
-            FirebaseUser currentUser = auth.getCurrentUser();
-            if (currentUser != null) {
-                currentUser.updatePassword(newPassword)
-                        .addOnSuccessListener(aVoid -> {
-                            Toast.makeText(getContext(), "Password updated successfully!", Toast.LENGTH_SHORT).show();
-                        })
-                        .addOnFailureListener(e -> {
-                            Toast.makeText(getContext(), "Failed to update password: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        });
-            }
-        }
+//        // Update password in FirebaseAuth if provided
+//        if (!newPassword.isEmpty()) {
+//            FirebaseUser currentUser = auth.getCurrentUser();
+//            if (currentUser != null) {
+//                currentUser.updatePassword(newPassword)
+//                        .addOnSuccessListener(aVoid -> {
+//                            Toast.makeText(getContext(), "Password updated successfully!", Toast.LENGTH_SHORT).show();
+//                        })
+//                        .addOnFailureListener(e -> {
+//                            Toast.makeText(getContext(), "Failed to update password: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//                        });
+//            }
+//        }
     }
 }
