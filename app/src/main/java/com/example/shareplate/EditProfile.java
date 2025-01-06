@@ -77,7 +77,7 @@ public class EditProfile extends Fragment {
         usernameEditText = view.findViewById(R.id.username);
         emailEditText = view.findViewById(R.id.email);
         phoneNumberEditText = view.findViewById(R.id.phone_number);
-        passwordEditText = view.findViewById(R.id.password);
+//        passwordEditText = view.findViewById(R.id.password);
         locationDisplay = view.findViewById(R.id.location_display);
         selectLocationButton = view.findViewById(R.id.select_location_button);
         updateButton = view.findViewById(R.id.update_button);

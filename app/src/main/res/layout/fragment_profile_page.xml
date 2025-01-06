@@ -135,15 +135,15 @@
 
                     <!-- Food Donated -->
                     <LinearLayout
+                        android:id="@+id/food_donated"
                         android:layout_width="0dp"
                         android:layout_height="140dp"
                         android:layout_margin="8dp"
                         android:layout_weight="1"
                         android:elevation="4dp"
                         android:gravity="center"
-                        android:orientation="vertical"
                         android:background="@drawable/rounded_corners"
-                        android:onClick="onFoodDonatedClick"
+                        android:orientation="vertical"
                         android:padding="8dp">
 
                         <TextView
@@ -218,6 +218,7 @@
 
                     <!-- Food Requested -->
                     <LinearLayout
+                        android:id="@+id/food_requested"
                         android:layout_width="0dp"
                         android:layout_height="140dp"
                         android:layout_margin="8dp"
@@ -226,8 +227,14 @@
                         android:gravity="center"
                         android:background="@drawable/rounded_corners"
                         android:orientation="vertical"
-                        android:padding="8dp"
-                        android:onClick="onCampaignsJoinedClick">
+                        android:padding="8dp">
+
+                        <!-- Campaigns Section -->
+                        <LinearLayout
+                            android:id="@+id/campaign_volunteer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -244,14 +251,12 @@
                             android:orientation="horizontal"
                             android:gravity="center">
 
-                            <!-- Icon -->
                             <ImageView
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:src="@drawable/campaign_icon"
                                 android:layout_marginEnd="25dp" />
 
-                            <!-- TextView -->
                             <TextView
                                 android:id="@+id/campaign_count"
                                 android:layout_width="wrap_content"
@@ -261,8 +266,15 @@
                                 android:textColor="#228B22"
                                 android:textSize="22sp"
                                 android:textStyle="bold" />
+                            </LinearLayout>
                         </LinearLayout>
 
+                        <!-- Volunteer Section -->
+                        <LinearLayout
+                            android:id="@+id/volunteer_section"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -279,14 +291,12 @@
                             android:orientation="horizontal"
                             android:gravity="center">
 
-                            <!-- Icon -->
                             <ImageView
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:src="@drawable/volunteer_icon"
                                 android:layout_marginEnd="25dp" />
 
-                            <!-- TextView -->
                             <TextView
                                 android:id="@+id/volunteer_count"
                                 android:layout_width="wrap_content"
@@ -296,6 +306,7 @@
                                 android:textColor="#228B22"
                                 android:textSize="22sp"
                                 android:textStyle="bold" />
+                            </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
