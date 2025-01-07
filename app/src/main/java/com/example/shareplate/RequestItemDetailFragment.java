@@ -355,8 +355,8 @@ public class RequestItemDetailFragment extends Fragment {
 
     private void showDeleteConfirmation(RequestFood item) {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Delete Request")
-                .setMessage("Are you sure you want to delete this request?")
+                .setTitle("Delete Post")
+                .setMessage("Are you sure you want to delete this post?")
                 .setPositiveButton("Delete", (dialog, which) -> deleteRequestItem(item))
                 .setNegativeButton("Cancel", null)
                 .show();

@@ -139,7 +139,7 @@
         android:id="@+id/deleteButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Delete Donation"
+        android:text="Delete Post"
         android:textColor="@color/white"
         android:backgroundTint="#FF0000"
         android:visibility="gone"
