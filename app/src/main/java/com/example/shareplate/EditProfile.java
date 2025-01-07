@@ -63,6 +63,7 @@ import java.util.Map;
 public class EditProfile extends Fragment {
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
+    private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
 
     private EditText usernameEditText, emailEditText, phoneNumberEditText, passwordEditText, locationDisplay;
     private Button updateButton;
@@ -75,7 +76,6 @@ public class EditProfile extends Fragment {
     private String userEmail;
     private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressBar loadingSpinner;
-    private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
 
     private FusedLocationProviderClient fusedLocationProviderClient;
 
@@ -124,10 +124,6 @@ public class EditProfile extends Fragment {
 
         editProfileImage.setOnClickListener(v -> openImagePicker());
 
-        selectLocationButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openLocationPicker();
         selectLocationButton.setOnClickListener(v -> {
             openMapFragment();
             if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -136,6 +132,11 @@ public class EditProfile extends Fragment {
                 ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 99);
             }
         });
+        if (backButton != null) {
+            backButton.setOnClickListener(v -> {
+                requireActivity().getSupportFragmentManager().popBackStack();
+            });
+        }
 
         // Set up the update button
         updateButton.setOnClickListener(v -> updateUserProfile());
@@ -147,65 +148,6 @@ public class EditProfile extends Fragment {
         imagePickerLauncher.launch(intent);
     }
 
-    private void openMapFragment() {
-        // Load the MapsFragment into the container
-        SupportMapFragment mapFragment = new SupportMapFragment();
-
-        // Pass the map fragment dynamically
-        getChildFragmentManager()
-                .beginTransaction()
-                .replace(R.id.maps_container, mapFragment)
-                .addToBackStack(null)
-                .commit();
-
-        // Make the container visible
-        View mapsContainer = getView().findViewById(R.id.maps_container);
-        if (mapsContainer != null) {
-            mapsContainer.setVisibility(View.VISIBLE);
-        }
-    }
-
-    private void getCurrentLocation() {
-        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(requireActivity(),
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 99);
-            return;
-        }
-
-        fusedLocationProviderClient.getLastLocation().addOnSuccessListener(requireActivity(), new OnSuccessListener<Location>() {
-            @Override
-                public void onSuccess(Location location) {
-                    // Check if the location is not null
-                    if (location != null) {
-                        double latitude = location.getLatitude();
-                        double longitude = location.getLongitude();
-
-                        // Use Geocoder to convert coordinates into address
-                        Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
-                        try {
-                            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
-
-                            if (addresses != null && !addresses.isEmpty()) {
-                                // Get the first address
-                                String address = addresses.get(0).getAddressLine(0);
-                                locationDisplay.setText(address);  // Display the address
-                            } else {
-                                locationDisplay.setText("No address found.");
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            locationDisplay.setText("Error in geocoding.");
-                        }
-                    } else {
-                        locationDisplay.setText("Unable to get current location.");
-                    }
-                }
-            });
-    }
-
     private final ActivityResultLauncher<Intent> locationPickerLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -215,6 +157,7 @@ public class EditProfile extends Fragment {
                 }
             }
     );
+
     private void openLocationPicker() {
         if (getActivity() == null) {
             Log.e("EditProfile", "Activity is null, cannot open location picker.");
@@ -285,7 +228,6 @@ public class EditProfile extends Fragment {
                     }
                 });
     }
-
     private void loadUserProfile() {
         if (userEmail == null) return;
 
@@ -389,5 +331,64 @@ public class EditProfile extends Fragment {
                 .addOnFailureListener(e -> {
                     Toast.makeText(getContext(), "Failed to fetch user details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private void openMapFragment() {
+        // Load the MapsFragment into the container
+        SupportMapFragment mapFragment = new SupportMapFragment();
+
+        // Pass the map fragment dynamically
+        getChildFragmentManager()
+                .beginTransaction()
+                .replace(R.id.maps_container, mapFragment)
+                .addToBackStack(null)
+                .commit();
+
+        // Make the container visible
+        View mapsContainer = getView().findViewById(R.id.maps_container);
+        if (mapsContainer != null) {
+            mapsContainer.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void getCurrentLocation() {
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(),
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 99);
+            return;
+        }
+
+        fusedLocationProviderClient.getLastLocation().addOnSuccessListener(requireActivity(), new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                // Check if the location is not null
+                if (location != null) {
+                    double latitude = location.getLatitude();
+                    double longitude = location.getLongitude();
+
+                    // Use Geocoder to convert coordinates into address
+                    Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
+                    try {
+                        List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+
+                        if (addresses != null && !addresses.isEmpty()) {
+                            // Get the first address
+                            String address = addresses.get(0).getAddressLine(0);
+                            locationDisplay.setText(address);  // Display the address
+                        } else {
+                            locationDisplay.setText("No address found.");
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        locationDisplay.setText("Error in geocoding.");
+                    }
+                } else {
+                    locationDisplay.setText("Unable to get current location.");
+                }
+            }
+        });
     }
 }
