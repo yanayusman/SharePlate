@@ -52,6 +52,8 @@ public class DonationItemRepository {
                             String status = document.getString("status");
                             String ownerProfileImageUrl = document.getString("ownerProfileImageUrl");
                             String donateType = document.getString("donateType");
+                            String feedback = document.getString("feedback");
+                            String receiverEmail = document.getString("receiverEmail");
 
                             int imageResourceId = R.drawable.placeholder_image;
                             Long resourceIdLong = document.getLong("imageResourceID");
@@ -82,6 +84,8 @@ public class DonationItemRepository {
                                 // Set the document ID and status
                                 item.setDocumentId(document.getId());
                                 item.setStatus(status != null ? status : "active");
+                                item.setFeedback(feedback);
+                                item.setReceiverEmail(receiverEmail);
                                 if (createdAt != null) {
                                     item.setCreatedAt(createdAt);
                                 }
@@ -116,33 +120,33 @@ public class DonationItemRepository {
         String ownerProfileImageUrl = currentUser.getPhotoUrl() != null ?
                 currentUser.getPhotoUrl().toString() : "";
 
-                    // Create donation data map
-                    Map<String, Object> donationData = new HashMap<>();
-                    donationData.put("name", item.getName());
-                    donationData.put("foodCategory", item.getFoodCategory());
-                    donationData.put("expiredDate", item.getExpiredDate());
-                    donationData.put("quantity", item.getQuantity());
-                    donationData.put("pickupTime", item.getPickupTime());
-                    donationData.put("location", item.getLocation());
-                    donationData.put("imageResourceId", item.getImageResourceId());
-                    donationData.put("imageUrl", item.getImageUrl());
-                    donationData.put("email", userEmail);
-                    donationData.put("ownerProfileImageUrl", ownerProfileImageUrl);
-                    donationData.put("status", "active");
-                    donationData.put("createdAt", System.currentTimeMillis());
-                    donationData.put("donateType", "Food");
+        // Create donation data map
+        Map<String, Object> donationData = new HashMap<>();
+        donationData.put("name", item.getName());
+        donationData.put("foodCategory", item.getFoodCategory());
+        donationData.put("expiredDate", item.getExpiredDate());
+        donationData.put("quantity", item.getQuantity());
+        donationData.put("pickupTime", item.getPickupTime());
+        donationData.put("location", item.getLocation());
+        donationData.put("imageResourceId", item.getImageResourceId());
+        donationData.put("imageUrl", item.getImageUrl());
+        donationData.put("email", userEmail);
+        donationData.put("ownerProfileImageUrl", ownerProfileImageUrl);
+        donationData.put("status", "active");
+        donationData.put("createdAt", System.currentTimeMillis());
+        donationData.put("donateType", "Food");
 
-                    // Add to Firestore
-                    db.collection(COLLECTION_NAME)
-                            .add(donationData)
-                            .addOnSuccessListener(documentReference -> {
-                                Log.d(TAG, "DocumentSnapshot written with ID: " + documentReference.getId());
-                                listener.onDonationSuccess();
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.w(TAG, "Error adding document", e);
-                                listener.onDonationFailure(e);
-                            });
+        // Add to Firestore
+        db.collection(COLLECTION_NAME)
+                .add(donationData)
+                .addOnSuccessListener(documentReference -> {
+                    Log.d(TAG, "DocumentSnapshot written with ID: " + documentReference.getId());
+                    listener.onDonationSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Log.w(TAG, "Error adding document", e);
+                    listener.onDonationFailure(e);
+                });
     }
 
 
@@ -205,5 +209,16 @@ public class DonationItemRepository {
     public interface OnStatusUpdateListener {
         void onUpdateSuccess();
         void onUpdateFailure(Exception e);
+    }
+
+    public void updateDonationWithFields(String documentId, Map<String, Object> updates, 
+            OnStatusUpdateListener listener) {
+        db.collection(COLLECTION_NAME)
+                .document(documentId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    listener.onUpdateSuccess();
+                })
+                .addOnFailureListener(listener::onUpdateFailure);
     }
 } 

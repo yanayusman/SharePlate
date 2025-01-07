@@ -5,6 +5,7 @@ import static android.app.Activity.RESULT_OK;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -17,6 +18,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -28,7 +30,10 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.bumptech.glide.Glide;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -45,6 +50,8 @@ import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -59,10 +66,15 @@ public class EditProfile extends Fragment {
 
     private EditText usernameEditText, emailEditText, phoneNumberEditText, passwordEditText, locationDisplay;
     private Button updateButton;
-    private ImageView backButton, selectLocationButton;
+    private ImageView backButton, selectLocationButton, profileImage, editProfileImage;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+    private FirebaseStorage storage;
+    private StorageReference storageRef;
+    // private ActivityResultLauncher<Intent> imagePickerLauncher;
     private String userEmail;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private ProgressBar loadingSpinner;
     private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
 
     private FusedLocationProviderClient fusedLocationProviderClient;
@@ -81,16 +93,20 @@ public class EditProfile extends Fragment {
         // Initialize Firebase instances
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
+        storageRef = storage.getReference();
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext());
 
         usernameEditText = view.findViewById(R.id.username);
         emailEditText = view.findViewById(R.id.email);
         phoneNumberEditText = view.findViewById(R.id.phone_number);
-        passwordEditText = view.findViewById(R.id.password);
+//        passwordEditText = view.findViewById(R.id.password);
         locationDisplay = view.findViewById(R.id.location_display);
         selectLocationButton = view.findViewById(R.id.select_location_button);
         updateButton = view.findViewById(R.id.update_button);
         backButton = view.findViewById(R.id.backBtn);
+        profileImage = view.findViewById(R.id.profile_image); // Profile image
+        editProfileImage = view.findViewById(R.id.edit_profile_image); // Edit icon
 
         // Get the current user
         FirebaseUser currentUser = auth.getCurrentUser();
@@ -106,6 +122,12 @@ public class EditProfile extends Fragment {
         // Load user profile data from Firestore
         loadUserProfile();
 
+        editProfileImage.setOnClickListener(v -> openImagePicker());
+
+        selectLocationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openLocationPicker();
         selectLocationButton.setOnClickListener(v -> {
             openMapFragment();
             if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -117,6 +139,12 @@ public class EditProfile extends Fragment {
 
         // Set up the update button
         updateButton.setOnClickListener(v -> updateUserProfile());
+    }
+
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        imagePickerLauncher.launch(intent);
     }
 
     private void openMapFragment() {
@@ -199,7 +227,64 @@ public class EditProfile extends Fragment {
 
         locationPickerLauncher.launch(intent);
     }
+    // Initialize the image picker launcher
+    private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    Uri selectedImageUri = result.getData().getData();
+                    uploadProfileImage(selectedImageUri);
+                }
+            }
+    );
 
+    private void uploadProfileImage(Uri imageUri) {
+        if (userEmail == null) {
+            Toast.makeText(getContext(), "User email not available!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show the loading spinner
+        if (loadingSpinner != null) {
+            loadingSpinner.setVisibility(View.VISIBLE);
+        }
+
+        StorageReference profileImageRef = storageRef.child("profile_images/" + userEmail + ".jpg");
+        profileImageRef.putFile(imageUri)
+                .addOnSuccessListener(taskSnapshot -> profileImageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                    // Update the profile image in Firestore
+                    db.collection("users").document(userEmail)
+                            .update("profileImage", uri.toString())
+                            .addOnSuccessListener(aVoid -> {
+                                // Broadcast profile image update
+                                Intent imageIntent = new Intent("profile.image.updated");
+                                imageIntent.putExtra("newProfileImageUrl", uri.toString());
+                                LocalBroadcastManager.getInstance(requireContext())
+                                        .sendBroadcast(imageIntent);
+
+                                Toast.makeText(getContext(), "Profile image updated!", Toast.LENGTH_SHORT).show();
+                                Glide.with(this)
+                                        .load(uri.toString())
+                                        .circleCrop()
+                                        .into(profileImage);
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(getContext(), "Failed to update Firestore: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnCompleteListener(task -> {
+                                // Hide the loading spinner
+                                if (loadingSpinner != null) {
+                                    loadingSpinner.setVisibility(View.GONE);
+                                }
+                            });
+                }))
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Failed to upload image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (loadingSpinner != null) {
+                        loadingSpinner.setVisibility(View.GONE);
+                    }
+                });
+    }
 
     private void loadUserProfile() {
         if (userEmail == null) return;
@@ -212,10 +297,23 @@ public class EditProfile extends Fragment {
                         String username = documentSnapshot.getString("username");
                         String phoneNumber = documentSnapshot.getString("phoneNumber");
                         String location = documentSnapshot.getString("location");
+                        String profileImageUrl = documentSnapshot.getString("profileImage"); // Fetch profile image URL
 
                         usernameEditText.setText(username != null ? username : "");
                         phoneNumberEditText.setText(phoneNumber != null ? phoneNumber : "");
                         locationDisplay.setText(location != null ? location : "");
+
+                        // Load profile image using Glide
+                        if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
+                            Glide.with(this)
+                                    .load(profileImageUrl)
+                                    .circleCrop()
+                                    .placeholder(R.drawable.profile) // Default profile image placeholder
+                                    .into(profileImage);
+                        } else {
+                            // Use a default profile image if no URL is available
+                            profileImage.setImageResource(R.drawable.profile);
+                        }
                     } else {
                         Toast.makeText(getContext(), "No profile data found. Please update your details.", Toast.LENGTH_SHORT).show();
                     }
@@ -229,7 +327,6 @@ public class EditProfile extends Fragment {
         // Retrieve updated data
         String username = usernameEditText.getText().toString().trim();
         String phoneNumber = phoneNumberEditText.getText().toString().trim();
-        String newPassword = passwordEditText.getText().toString().trim();
         String location = locationDisplay.getText().toString().trim();
 
         // Validate input fields
@@ -257,6 +354,12 @@ public class EditProfile extends Fragment {
                         db.collection("users").document(userEmail)
                                 .update(updates)
                                 .addOnSuccessListener(aVoid -> {
+                                    // Broadcast username update
+                                    Intent usernameIntent = new Intent("profile.username.updated");
+                                    usernameIntent.putExtra("newUsername", username);
+                                    LocalBroadcastManager.getInstance(requireContext())
+                                            .sendBroadcast(usernameIntent);
+
                                     Toast.makeText(getContext(), "Profile updated successfully!", Toast.LENGTH_SHORT).show();
                                     requireActivity().getSupportFragmentManager().popBackStack();
                                 })
@@ -265,10 +368,16 @@ public class EditProfile extends Fragment {
                                 });
                     } else {
                         // Create a new document if it doesn't exist
-                        updates.put("email", userEmail); // Add email to the document
+                        updates.put("email", userEmail);
                         db.collection("users").document(userEmail)
                                 .set(updates)
                                 .addOnSuccessListener(aVoid -> {
+                                    // Broadcast username update
+                                    Intent usernameIntent = new Intent("profile.username.updated");
+                                    usernameIntent.putExtra("newUsername", username);
+                                    LocalBroadcastManager.getInstance(requireContext())
+                                            .sendBroadcast(usernameIntent);
+
                                     Toast.makeText(getContext(), "Profile created successfully!", Toast.LENGTH_SHORT).show();
                                     requireActivity().getSupportFragmentManager().popBackStack();
                                 })
@@ -280,19 +389,5 @@ public class EditProfile extends Fragment {
                 .addOnFailureListener(e -> {
                     Toast.makeText(getContext(), "Failed to fetch user details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
-
-        // Update password in FirebaseAuth if provided
-        if (!newPassword.isEmpty()) {
-            FirebaseUser currentUser = auth.getCurrentUser();
-            if (currentUser != null) {
-                currentUser.updatePassword(newPassword)
-                        .addOnSuccessListener(aVoid -> {
-                            Toast.makeText(getContext(), "Password updated successfully!", Toast.LENGTH_SHORT).show();
-                        })
-                        .addOnFailureListener(e -> {
-                            Toast.makeText(getContext(), "Failed to update password: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        });
-            }
-        }
     }
 }

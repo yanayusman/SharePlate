@@ -42,6 +42,8 @@ import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import android.graphics.drawable.Drawable;
 import com.bumptech.glide.RequestBuilder;
+import java.util.Map;
+import java.util.HashMap;
 
 public class ProfilePage extends Fragment {
     private static final String TAG = "ProfilePage";
@@ -50,9 +52,9 @@ public class ProfilePage extends Fragment {
     private final String COLLECTION_REQUEST = "foodRequest";
 
     private final String SUBCOLLECTION_USER = "joinedEvents";
-    private ImageView profileImage, editProfileImage, notificationIV;
-    private TextView usernameTextView, donatedCountTV, requestedCountTV, campaignsCountTV, volunteerCountTV;
-    private MaterialButton editProfileButton, myfavouriteButton, rateAppButton, termsConditionButton, signOutButton;
+    private ImageView profileImage, notificationIV;
+    private TextView  donatedCountTV, requestedCountTV, campaignsCountTV, volunteerCountTV, profileUsername;
+    private MaterialButton editProfileButton, rateAppButton, termsConditionButton, signOutButton, resetPass;
     private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
     private String userEmail;
@@ -60,29 +62,20 @@ public class ProfilePage extends Fragment {
     private FirebaseStorage storage;
     private StorageReference storageRef;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private FirebaseFirestore db;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mAuth = FirebaseAuth.getInstance();
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        db = FirebaseFirestore.getInstance();
         if (currentUser == null) {
             Log.w(TAG, "No authenticated user found");
         }
         userEmail = currentUser.getEmail();
         storage = FirebaseStorage.getInstance();
         storageRef = storage.getReference();
-
-        // Initialize image picker launcher
-        imagePickerLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-                        Uri selectedImageUri = result.getData().getData();
-                        uploadProfileImage(selectedImageUri);
-                    }
-                }
-        );
     }
 
     @Nullable
@@ -94,8 +87,8 @@ public class ProfilePage extends Fragment {
 
         // Initialize views
         profileImage = view.findViewById(R.id.profile_image);
-        setupProfileImageClick();
-        usernameTextView = view.findViewById(R.id.username);
+        //usernameTextView = view.findViewById(R.id.username_text);
+        profileUsername = view.findViewById(R.id.profile_username);
         signOutButton = view.findViewById(R.id.signOutButton);
         if (signOutButton == null) {
             Log.e(TAG, "onCreateView: signOutButton not found in layout");
@@ -110,9 +103,6 @@ public class ProfilePage extends Fragment {
             });
         }
 
-        editProfileImage = view.findViewById(R.id.edit_profile_image);
-        editProfileImage.setOnClickListener(v -> openImagePicker());
-
         // Initialize SwipeRefreshLayout
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         swipeRefreshLayout.setOnRefreshListener(this::refreshProfile);
@@ -126,7 +116,7 @@ public class ProfilePage extends Fragment {
         );
 
         // Load existing profile image if available
-            loadProfileImage(currentUser.getUid());
+            loadProfileImage();
 
         // Initialize the view
         editProfileButton = view.findViewById(R.id.editProfileButton);
@@ -137,8 +127,11 @@ public class ProfilePage extends Fragment {
         campaignsCountTV = view.findViewById(R.id.campaign_count);
         volunteerCountTV = view.findViewById(R.id.volunteer_count);
         notificationIV = view.findViewById(R.id.menu_icon2);
+        resetPass = view.findViewById(R.id.resetPassButton);
 
         fetchCurrentUserDetails();
+
+        setResetPassClickListener();
 
         notificationIV.setOnClickListener(v -> {
             requireActivity().getSupportFragmentManager()
@@ -171,6 +164,17 @@ public class ProfilePage extends Fragment {
             startActivity(browserIntent);
         });
 
+        // Add click listeners in onViewCreated
+        View donatedSection = view.findViewById(R.id.food_donated);
+        View requestedSection = view.findViewById(R.id.food_requested);
+        View campaignSection = view.findViewById(R.id.campaign_volunteer);
+        View volunteerSection = view.findViewById(R.id.volunteer_section);
+
+        donatedSection.setOnClickListener(v -> openHistory("donated"));
+        requestedSection.setOnClickListener(v -> openHistory("requested"));
+        campaignSection.setOnClickListener(v -> openHistory("campaigns"));
+        volunteerSection.setOnClickListener(v -> openHistory("volunteering"));
+
         return view;
     }
 
@@ -179,30 +183,126 @@ public class ProfilePage extends Fragment {
             FirebaseFirestore db = FirebaseFirestore.getInstance();
 
             db.collection(COLLECTION_USER)
-                    .whereEqualTo("email", userEmail)
+                    .document(userEmail)
                     .get()
-                    .addOnSuccessListener(queryDocumentSnapshots -> {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            DocumentSnapshot document = queryDocumentSnapshots.getDocuments().get(0);
-                            String username = " ";
-                            if (document.exists()) {
-                                username = document.getString("username");
-                                if (username == null || username.isEmpty()) {
-                                    username = "Anonymous";
-                                }
+                    .addOnSuccessListener(document -> {
+                        if (document.exists()) {
+                            String username = document.getString("username");
+                            if (username == null || username.isEmpty()) {
+                                username = userEmail.substring(0, userEmail.indexOf('@'));
+
+                                document.getReference().update("username", username)
+                                        .addOnFailureListener(e -> {
+                                            Log.e("FirestoreError", "Error updating username", e);
+                                        });
                             }
-                            // Display username and fetch donation count
-                            usernameTextView.setText(username);
+
+                            // Add null checks before setting text
+//                            if (usernameTextView != null) {
+//                                usernameTextView.setText(username);
+//                            }
+                            if (profileUsername != null) {
+                                profileUsername.setText(username);
+                            }
+
                             fetchDonatedCount(username);
                             fetchRequestedCount(username);
                             fetchCampaignsCount(username);
                             fetchVolunteersCount(username);
+                        } else {
+                            // Create user document if it doesn't exist
+                            String defaultUsername = userEmail.substring(0, userEmail.indexOf('@'));
+                            Map<String, Object> userData = new HashMap<>();
+                            userData.put("email", userEmail);
+                            userData.put("username", defaultUsername);
+                            userData.put("location", "");
+                            userData.put("phoneNumber", "");
+                            userData.put("profileImage", "");
+
+                            db.collection(COLLECTION_USER)
+                                    .document(userEmail)
+                                    .set(userData)
+                                    .addOnSuccessListener(aVoid -> {
+                                        // Add null checks before setting text
+//                                        if (usernameTextView != null) {
+//                                            usernameTextView.setText(defaultUsername);
+//                                        }
+                                        if (profileUsername != null) {
+                                            profileUsername.setText(defaultUsername);
+                                        }
+                                        fetchDonatedCount(defaultUsername);
+                                        fetchRequestedCount(defaultUsername);
+                                        fetchCampaignsCount(defaultUsername);
+                                        fetchVolunteersCount(defaultUsername);
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e("FirestoreError", "Error creating user document", e);
+                                    });
                         }
                     })
                     .addOnFailureListener(e -> {
                         Log.e("FirestoreError", "Error fetching username", e);
                     });
         }
+    }
+
+    // Add a new method to handle username updates
+    private BroadcastReceiver usernameUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String newUsername = intent.getStringExtra("newUsername");
+            if (newUsername != null && !newUsername.isEmpty()) {
+//                usernameTextView.setText(newUsername);
+                profileUsername.setText(newUsername);
+            }
+        }
+    };
+
+    private BroadcastReceiver profileUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String newProfileImageUrl = intent.getStringExtra("newProfileImageUrl");
+            if (newProfileImageUrl != null && !newProfileImageUrl.isEmpty() && profileImage != null) {
+                Glide.with(ProfilePage.this)
+                        .load(newProfileImageUrl)
+                        .circleCrop()
+                        .into(profileImage);
+            }
+        }
+    };
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Register both receivers
+        if (getActivity() != null) {
+            LocalBroadcastManager.getInstance(getActivity())
+                    .registerReceiver(profileUpdateReceiver, new IntentFilter("profile.image.updated"));
+            LocalBroadcastManager.getInstance(getActivity())
+                    .registerReceiver(usernameUpdateReceiver, new IntentFilter("profile.username.updated"));
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Unregister both receivers
+        if (getActivity() != null) {
+            LocalBroadcastManager.getInstance(getActivity())
+                    .unregisterReceiver(profileUpdateReceiver);
+            LocalBroadcastManager.getInstance(getActivity())
+                    .unregisterReceiver(usernameUpdateReceiver);
+        }
+    }
+
+                            /**
+                             * Set a click listener for the "Reset Password" button.
+                             */
+    private void setResetPassClickListener() {
+        resetPass.setOnClickListener(v -> getParentFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, new ResetPasswordFragment())
+                .addToBackStack(null)
+                .commit());
     }
 
     private void fetchDonatedCount(String username) {
@@ -474,81 +574,162 @@ public class ProfilePage extends Fragment {
         }
     }
 
-    private void loadProfileImage(String userId) {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
+//    private void loadProfileImage(String userId) {
+//        FirebaseUser currentUser = mAuth.getCurrentUser();
+//
+//        if (currentUser == null) return;
+//
+//        // Use a single Glide request builder for all cases
+//        RequestBuilder<Drawable> glideRequest = Glide.with(this)
+//                .load(R.drawable.profile) // Default placeholder
+//                .circleCrop()
+//                .diskCacheStrategy(DiskCacheStrategy.ALL) // Enable disk caching
+//                .skipMemoryCache(false); // Enable memory caching
+//
+//        // Try loading from SharedPreferences first
+//        String savedProfileImageUrl = getContext() != null ?
+//                getContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+//                        .getString("default_profile_image", null) : null;
+//
+//        if (savedProfileImageUrl != null) {
+//            glideRequest.load(savedProfileImageUrl)
+//                    .into(profileImage);
+//
+//            // Store in Firestore if not already present
+//            storeProfileImageInFirestore(savedProfileImageUrl);
+//            return;
+//        }
+//
+//        // Then try Firebase Auth
+//        if (currentUser.getPhotoUrl() != null) {
+//            String authPhotoUrl = currentUser.getPhotoUrl().toString();
+//            glideRequest.load(authPhotoUrl)
+//                    .into(profileImage);
+//
+//            // Store in Firestore if not already present
+//            storeProfileImageInFirestore(authPhotoUrl);
+//            return;
+//        }
+//
+//        // Fallback to Firebase Storage if no other source is available
+//        StorageReference imageRef = storageRef.child("profile_images/" + userId + ".jpg");
+//
+//        imageRef.getDownloadUrl()
+//                .addOnSuccessListener(uri -> {
+//                    if (getContext() != null && profileImage != null) {
+//                        String downloadUrl = uri.toString();
+//
+//                        // Save the URL to SharedPreferences for faster future loads
+//                        getContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+//                                .edit()
+//                                .putString("default_profile_image", downloadUrl)
+//                                .apply();
+//
+//                        glideRequest.load(downloadUrl)
+//                                .into(profileImage);
+//
+//                        // Store in Firestore
+//                        storeProfileImageInFirestore(downloadUrl);
+//                    }
+//                })
+//                .addOnFailureListener(e -> {
+//                    Log.d(TAG, "No profile image found for user: " + userId);
+//                    if (getContext() != null && profileImage != null) {
+//                        glideRequest.into(profileImage);
+//                    }
+//                });
+//    }
 
-        // Use a single Glide request builder for all cases
-        RequestBuilder<Drawable> glideRequest = Glide.with(this)
-                .load(R.drawable.profile) // Default placeholder
-                .circleCrop()
-                .diskCacheStrategy(DiskCacheStrategy.ALL) // Enable disk caching
-                .skipMemoryCache(false); // Enable memory caching
-
-        // Try loading from SharedPreferences first
-        String savedProfileImageUrl = getContext() != null ?
-                getContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                        .getString("default_profile_image", null) : null;
-
-        if (savedProfileImageUrl != null) {
-            glideRequest.load(savedProfileImageUrl)
-                    .into(profileImage);
+    private void loadProfileImage() {
+        if (currentUser == null) {
+            Log.w("ProfilePage", "No user logged in.");
             return;
         }
 
-        // Then try Firebase Auth
-        if (currentUser != null && currentUser.getPhotoUrl() != null) {
-            glideRequest.load(currentUser.getPhotoUrl())
-                    .into(profileImage);
+        String userEmail = currentUser.getEmail();
+        if (userEmail == null) {
+            Log.w("ProfilePage", "User email not available.");
             return;
         }
 
-        // Fallback to storage if no other source is available
-        StorageReference imageRef = storageRef.child("profile_images/" + userId + ".jpg");
+        // Load profile image from Firestore
+        db.collection("users").document(userEmail).get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        DocumentSnapshot document = task.getResult();
+                        String imageUrl = document.getString("profileImage");
 
-        imageRef.getDownloadUrl()
-                .addOnSuccessListener(uri -> {
-                    if (getContext() != null && profileImage != null) {
-                        // Save the URL to SharedPreferences for faster future loads
-                        getContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                                .edit()
-                                .putString("default_profile_image", uri.toString())
-                                .apply();
+                        if (imageUrl == null && currentUser.getPhotoUrl() != null) {
+                            imageUrl = currentUser.getPhotoUrl().toString();
+                        }
 
-                        glideRequest.load(uri)
-                                .into(profileImage);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.d(TAG, "No profile image found for user: " + userId);
-                    if (getContext() != null && profileImage != null) {
-                        glideRequest.into(profileImage);
+                        if (imageUrl != null) {
+                            displayProfileImage(imageUrl);
+                        } else {
+                            Log.w("ProfilePage", "No profile image found for user.");
+                        }
+                    } else {
+                        Log.e("ProfilePage", "Error fetching profile image", task.getException());
                     }
                 });
     }
 
-    private void refreshProfile() {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser != null) {
-            // Refresh user data
-//            email.setText("Email: " + currentUser.getEmail());
+    private void displayProfileImage(String imageUrl) {
+        if (getContext() != null && profileImage != null) {
+            Glide.with(getContext())
+                    .load(imageUrl)
+                    .placeholder(R.drawable.profile) // Default placeholder
+                    .circleCrop()
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .into(profileImage);
+        }
 
-            String displayName = currentUser.getDisplayName();
-//            username.setText(displayName != null && !displayName.isEmpty() ?
-//                    displayName : currentUser.getEmail());
-
-            // Reload profile image
-            loadProfileImage(currentUser.getUid());
-
-            // Optional: Refresh any other user data you want to update
-
-            // End the refreshing animation
+        if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setRefreshing(false);
-        } else {
-            swipeRefreshLayout.setRefreshing(false);
-            // Handle the case where user is not logged in
-            Toast.makeText(getContext(), "Please log in to refresh profile", Toast.LENGTH_SHORT).show();
         }
     }
+
+    private void refreshProfile() {
+        loadProfileImage();
+    }
+    private void storeProfileImageInFirestore(String imageUrl) {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) return;
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String userEmail = currentUser.getEmail();
+
+        // Update Firestore with the profile image URL
+        db.collection("users").document(userEmail)
+                .update("profileImage", imageUrl)
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "Profile image URL stored in Firestore"))
+                .addOnFailureListener(e -> Log.e(TAG, "Failed to store profile image URL in Firestore", e));
+    }
+
+
+//    private void refreshProfile() {
+//        FirebaseUser currentUser = mAuth.getCurrentUser();
+//        if (currentUser != null) {
+//            // Refresh user data
+////            email.setText("Email: " + currentUser.getEmail());
+//
+//            String displayName = currentUser.getDisplayName();
+////            username.setText(displayName != null && !displayName.isEmpty() ?
+////                    displayName : currentUser.getEmail());
+//
+//            // Reload profile image
+//            loadProfileImage(currentUser.getUid());
+//
+//            // Optional: Refresh any other user data you want to update
+//
+//            // End the refreshing animation
+//            swipeRefreshLayout.setRefreshing(false);
+//        } else {
+//            swipeRefreshLayout.setRefreshing(false);
+//            // Handle the case where user is not logged in
+//            Toast.makeText(getContext(), "Please log in to refresh profile", Toast.LENGTH_SHORT).show();
+//        }
+//    }
 
     private void updateDonationsProfileImage(String newProfileImageUrl, String ownerUsername) {
         // Get reference to Firestore
@@ -598,26 +779,45 @@ public class ProfilePage extends Fragment {
             profileImage.setOnClickListener(v -> {
                 FirebaseUser currentUser = mAuth.getCurrentUser();
                 if (currentUser != null) {
-                    // Get profile image URL from SharedPreferences or Firebase
-                    String imageUrl = getContext() != null ?
-                            getContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                                    .getString("default_profile_image", null) : null;
+                    String userEmail = currentUser.getEmail();
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-                    // If no URL in SharedPreferences, try Firebase
-                    if (imageUrl == null && currentUser.getPhotoUrl() != null) {
-                        imageUrl = currentUser.getPhotoUrl().toString();
-                    }
+                    // Retrieve profile image URL from Firestore
+                    db.collection("users").document(userEmail).get()
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful() && task.getResult() != null) {
+                                    DocumentSnapshot document = task.getResult();
+                                    String imageUrl = document.getString("profileImage");
 
-                    // Create and show FullScreenImageFragment
-                    FullScreenImageFragment fullScreenFragment =
-                            FullScreenImageFragment.newInstance(imageUrl, R.drawable.profile);
-                    requireActivity().getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.fragment_container, fullScreenFragment)
-                            .addToBackStack(null)
-                            .commit();
+                                    // Fallback to Firebase Auth photo URL if Firestore doesn't have it
+                                    if (imageUrl == null && currentUser.getPhotoUrl() != null) {
+                                        imageUrl = currentUser.getPhotoUrl().toString();
+                                    }
+
+                                    // Create and show FullScreenImageFragment
+                                    FullScreenImageFragment fullScreenFragment =
+                                            FullScreenImageFragment.newInstance(imageUrl, R.drawable.profile);
+                                    requireActivity().getSupportFragmentManager()
+                                            .beginTransaction()
+                                            .replace(R.id.fragment_container, fullScreenFragment)
+                                            .addToBackStack(null)
+                                            .commit();
+                                } else {
+                                    Log.e("ProfileImageClick", "Error fetching profile image", task.getException());
+                                }
+                            });
                 }
             });
         }
     }
+
+    private void openHistory(String type) {
+        UserHistoryFragment historyFragment = UserHistoryFragment.newInstance(type);
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, historyFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
 }

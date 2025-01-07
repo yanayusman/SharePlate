@@ -1,25 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Primary Colors -->
+    <color name="primary">#4CAF50</color>
+    <color name="primary_dark">#388E3C</color>
+    <color name="primary_light">#C8E6C9</color>
+    <color name="accent">#8BC34A</color>
+
+    <!-- Standard Colors -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="button_green">#4CAF50</color>
-    <color name="text_blue">#2196F3</color>
     <color name="gray">#CCCCCC</color>
     <color name="light_gray">#F5F5F5</color>
-    <color name="red">#FF0000</color>
-    <color name="colorPrimary">#6200EE</color>
-    <color name="colorPrimaryDark">#3700B3</color>
-    <color name="colorAccent">#03DAC5</color>
     <color name="dark_gray">#696969</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
 
-    <color name="dialog_color_1">#FDD736</color>
-    <color name="dialog_color_2">#228B22</color>
+    <!-- Specific UI Colors -->
+    <color name="button_green">@color/primary</color>
+    <color name="button_green_dark">@color/primary_dark</color>
+    <color name="button_green_light">@color/primary_light</color>
+    <color name="text_blue">#2196F3</color>
+
+    <!-- Status Colors -->
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FFC107</color>
+    <color name="error">#F44336</color>
 
     <!-- Bottom Navigation Colors -->
-    <color name="bottom_nav_selected">@color/button_green</color>
+    <color name="bottom_nav_selected">@color/primary</color>
     <color name="bottom_nav_unselected">@color/gray</color>
 
-    <!-- Add these color definitions if they don't exist -->
-    <color name="button_green_dark">#1B6E1B</color>
-    <color name="button_green_light">#4CAF50</color>
+    <!-- Dialog Colors -->
+    <color name="dialog_color_1">#FDD736</color>
+    <color name="dialog_color_2">@color/primary</color>
 </resources>

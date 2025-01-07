@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:orientation="vertical">
 
     <!-- Toolbar -->
     <androidx.appcompat.widget.Toolbar
@@ -51,7 +50,7 @@
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:layout_marginEnd="16dp"
-                android:src="@drawable/notification" />
+                android:src="@drawable/ic_notifications" />
         </LinearLayout>
     </androidx.appcompat.widget.Toolbar>
 
@@ -84,13 +83,13 @@
                     <FrameLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="-45dp"
+                        android:layout_marginTop="-12dp"
                         android:layout_marginBottom="8dp">
 
                         <ImageView
                             android:id="@+id/profile_image"
-                            android:layout_width="80dp"
-                            android:layout_height="80dp"
+                            android:layout_width="100dp"
+                            android:layout_height="100dp"
                             android:background="@drawable/circle_background"
                             android:contentDescription="Profile Picture"
                             android:padding="4dp"
@@ -103,29 +102,43 @@
                             android:layout_gravity="bottom|end"
                             android:background="@drawable/circle_background"
                             android:padding="4dp"
-                            android:src="@drawable/baseline_edit_24" />
+                            android:src="@drawable/baseline_edit_24"
+                            android:visibility="gone" />
                     </FrameLayout>
 
-                    <!-- Username -->
+                    <!-- Username text view
                     <TextView
-                        android:id="@+id/username"
+                        android:id="@+id/username_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/poppins"
-                        android:text="Username"
-                        android:textColor="@android:color/white"
-                        android:textSize="18sp"
+                        android:layout_marginTop="8dp"
+                        android:textSize="16sp"
+                        android:textStyle="bold"/> -->
+
+                    <!-- Profile username text view -->
+                    <TextView
+                        android:id="@+id/profile_username"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/profile_image"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginTop="3dp"
+                        android:layout_marginBottom="3dp"
+                        android:fontFamily="@font/poppins_bold"
+                        android:textColor="#FFFFFF"
+                        android:textSize="24sp"
                         android:textStyle="bold" />
 
 
                 </LinearLayout>
+
 
                 <!-- Statistics Section -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="15dp"
-                    android:layout_marginTop="-65dp"
+                    android:layout_marginTop="-35dp"
                     android:layout_marginEnd="15dp"
                     android:gravity="center"
                     android:orientation="horizontal">
@@ -136,81 +149,97 @@
                         android:layout_height="140dp"
                         android:layout_margin="8dp"
                         android:layout_weight="1"
+                        android:background="@drawable/rounded_corners"
                         android:elevation="4dp"
                         android:gravity="center"
                         android:orientation="vertical"
-                        android:background="@drawable/rounded_corners"
-                        android:onClick="onFoodDonatedClick"
                         android:padding="8dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:fontFamily="@font/poppins"
-                            android:text="Donated"
-                            android:textColor="#000000"
-                            android:textSize="14sp" />
-
                         <LinearLayout
-                            android:layout_width="150dp"
+                            android:id="@+id/food_donated"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center">
+                            android:gravity="center"
+                            android:orientation="vertical">
 
-                            <!-- Icon -->
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/donate_icon"
-                                android:layout_marginEnd="25dp" />
-
-                            <!-- TextView -->
                             <TextView
-                                android:id="@+id/donated_count"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="@font/poppins_bold"
-                                android:text="0"
-                                android:textColor="#228B22"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_marginBottom="4dp"
+                                android:fontFamily="@font/poppins"
+                                android:text="Donated"
+                                android:textColor="#000000"
+                                android:textSize="14sp" />
+
+                            <LinearLayout
+                                android:layout_width="150dp"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <!-- Icon -->
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_marginEnd="25dp"
+                                    android:src="@drawable/donate_icon" />
+
+                                <!-- TextView -->
+                                <TextView
+                                    android:id="@+id/donated_count"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:text="0"
+                                    android:textColor="#228B22"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
                         </LinearLayout>
-
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:fontFamily="@font/poppins"
-                            android:text="Requested"
-                            android:textColor="#000000"
-                            android:textSize="14sp" />
 
                         <LinearLayout
-                            android:layout_width="150dp"
+                            android:id="@+id/food_requested"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center">
+                            android:gravity="center"
+                            android:orientation="vertical">
 
-                            <!-- Icon -->
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/receive_icon"
-                                android:layout_marginEnd="25dp" />
-
-                            <!-- TextView -->
                             <TextView
-                                android:id="@+id/requested_count"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="@font/poppins_bold"
-                                android:text="0"
-                                android:textColor="#228B22"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_marginBottom="4dp"
+                                android:fontFamily="@font/poppins"
+                                android:text="Requested"
+                                android:textColor="#000000"
+                                android:textSize="14sp" />
+
+                            <LinearLayout
+                                android:layout_width="150dp"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <!-- Icon -->
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_marginEnd="25dp"
+                                    android:src="@drawable/receive_icon" />
+
+                                <!-- TextView -->
+                                <TextView
+                                    android:id="@+id/requested_count"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:text="0"
+                                    android:textColor="#228B22"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
                         </LinearLayout>
+
                     </LinearLayout>
 
                     <!-- Food Requested -->
@@ -219,80 +248,92 @@
                         android:layout_height="140dp"
                         android:layout_margin="8dp"
                         android:layout_weight="1"
+                        android:background="@drawable/rounded_corners"
                         android:elevation="4dp"
                         android:gravity="center"
-                        android:background="@drawable/rounded_corners"
                         android:orientation="vertical"
-                        android:padding="8dp"
-                        android:onClick="onCampaignsJoinedClick">
+                        android:padding="8dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:fontFamily="@font/poppins"
-                            android:text="Campaigns Joined"
-                            android:textColor="#000000"
-                            android:textSize="14sp" />
-
+                        <!-- Campaigns Section -->
                         <LinearLayout
-                            android:layout_width="150dp"
+                            android:id="@+id/campaign_volunteer"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center">
+                            android:orientation="vertical">
 
-                            <!-- Icon -->
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/campaign_icon"
-                                android:layout_marginEnd="25dp" />
-
-                            <!-- TextView -->
                             <TextView
-                                android:id="@+id/campaign_count"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="@font/poppins_bold"
-                                android:text="0"
-                                android:textColor="#228B22"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_gravity="center"
+                                android:layout_marginBottom="4dp"
+                                android:fontFamily="@font/poppins"
+                                android:text="Campaigns Joined"
+                                android:textColor="#000000"
+                                android:textSize="14sp" />
+
+                            <LinearLayout
+                                android:layout_width="150dp"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_marginEnd="25dp"
+                                    android:src="@drawable/campaign_icon" />
+
+                                <TextView
+                                    android:id="@+id/campaign_count"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:text="0"
+                                    android:textColor="#228B22"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
                         </LinearLayout>
 
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:fontFamily="@font/poppins"
-                            android:text="Volunteers Joined"
-                            android:textColor="#000000"
-                            android:textSize="14sp" />
-
+                        <!-- Volunteer Section -->
                         <LinearLayout
-                            android:layout_width="150dp"
+                            android:id="@+id/volunteer_section"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center">
+                            android:orientation="vertical">
 
-                            <!-- Icon -->
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/volunteer_icon"
-                                android:layout_marginEnd="25dp" />
-
-                            <!-- TextView -->
                             <TextView
-                                android:id="@+id/volunteer_count"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="@font/poppins_bold"
-                                android:text="0"
-                                android:textColor="#228B22"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_gravity="center"
+                                android:layout_marginBottom="4dp"
+                                android:fontFamily="@font/poppins"
+                                android:text="Volunteers Joined"
+                                android:textColor="#000000"
+                                android:textSize="14sp" />
+
+                            <LinearLayout
+                                android:layout_width="150dp"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_marginEnd="25dp"
+                                    android:src="@drawable/volunteer_icon" />
+
+                                <TextView
+                                    android:id="@+id/volunteer_count"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:text="0"
+                                    android:textColor="#228B22"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
@@ -353,6 +394,23 @@
                         android:textColor="@color/black"
                         app:backgroundTint="#FFFFFF"
                         app:icon="@drawable/terms_condition"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp"
+                        app:iconTint="#000000"
+                        app:strokeColor="#000000"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/resetPassButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="32dp"
+                        android:layout_marginEnd="32dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="Reset Password"
+                        android:textColor="@color/black"
+                        app:backgroundTint="#FFFFFF"
+                        app:icon="@drawable/privacy_policy"
                         app:iconGravity="textStart"
                         app:iconPadding="8dp"
                         app:iconTint="#000000"

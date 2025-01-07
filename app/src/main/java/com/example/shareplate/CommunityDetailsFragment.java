@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CommunityDetailsFragment extends Fragment {
-    private static final String ARG_EVENT_ITEM = "event_item";
+    public static final String ARG_EVENT_ITEM = "event_item";
     private BroadcastReceiver profileUpdateReceiver;
     private SwipeRefreshLayout swipeRefreshLayout;
     private Event currentEventItem;
@@ -115,6 +115,14 @@ public class CommunityDetailsFragment extends Fragment {
         };
 
         detailRecyclerView.setAdapter(adapter);
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            currentEventItem = (Event) getArguments().getSerializable(ARG_EVENT_ITEM);
+        }
     }
 
     private void setupViews(View view) {
