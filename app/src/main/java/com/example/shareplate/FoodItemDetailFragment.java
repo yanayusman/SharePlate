@@ -441,25 +441,59 @@ public class FoodItemDetailFragment extends Fragment {
     private void storeNotificationForOwner(DonationItem item, String requesterEmail) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // Create notification data
-        Map<String, Object> notificationData = new HashMap<>();
-        notificationData.put("ownerEmail", item.getEmail());
-        notificationData.put("itemId", item.getDocumentId());
-        notificationData.put("itemName", item.getName());
-        notificationData.put("requesterEmail", requesterEmail);
-        notificationData.put("location", item.getLocation());
-        notificationData.put("imageUrl", item.getImageUrl());
-        notificationData.put("timestamp", System.currentTimeMillis());
-        notificationData.put("status", "unread");
+        // Fetch the username from the users collection
+        db.collection("users")
+                .whereEqualTo("email", requesterEmail)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    String requesterUsername = "Unknown User";
+                    if (!querySnapshot.isEmpty()) {
+                        requesterUsername = querySnapshot.getDocuments().get(0).getString("username");
+                    }
 
-        // Store the notification in the Firestore notification collection
-        db.collection("notifications")
-                .add(notificationData)
-                .addOnSuccessListener(documentReference -> {
-                    Log.d("Notification", "Notification stored successfully");
+                    Map<String, Object> notificationData = new HashMap<>();
+                    notificationData.put("ownerEmail", item.getEmail());
+                    notificationData.put("itemId", item.getDocumentId());
+                    notificationData.put("itemName", item.getName());
+                    notificationData.put("requesterEmail", requesterEmail);
+                    notificationData.put("location", item.getLocation());
+                    notificationData.put("imageUrl", item.getImageUrl());
+                    notificationData.put("timestamp", System.currentTimeMillis());
+                    notificationData.put("status", "unread");
+                    notificationData.put("message", requesterUsername + " has requested your donation!");
+
+                    db.collection("notifications")
+                            .add(notificationData)
+                            .addOnSuccessListener(documentReference -> {
+                                Log.d("Notification", "Notification stored successfully");
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("NotificationError", "Failed to store notification: " + e.getMessage());
+                            });
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("NotificationError", "Failed to store notification: " + e.getMessage());
+                    Log.e("UserQueryError", "Failed to fetch requester username: " + e.getMessage());
+
+                    // Fallback: Store notification with requester email if username fetch fails
+                    Map<String, Object> notificationData = new HashMap<>();
+                    notificationData.put("ownerEmail", item.getEmail());
+                    notificationData.put("itemId", item.getDocumentId());
+                    notificationData.put("itemName", item.getName());
+                    notificationData.put("requesterEmail", requesterEmail);
+                    notificationData.put("location", item.getLocation());
+                    notificationData.put("imageUrl", item.getImageUrl());
+                    notificationData.put("timestamp", System.currentTimeMillis());
+                    notificationData.put("status", "unread");
+                    notificationData.put("message", requesterEmail + " has joined your event!");
+
+                    db.collection("notifications")
+                            .add(notificationData)
+                            .addOnSuccessListener(documentReference -> {
+                                Log.d("Notification", "Notification stored successfully (fallback to email)");
+                            })
+                            .addOnFailureListener(err -> {
+                                Log.e("NotificationError", "Failed to store notification (fallback): " + err.getMessage());
+                            });
                 });
     }
 

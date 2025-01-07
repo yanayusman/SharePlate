@@ -41,7 +41,7 @@ public class NotificationRepo {
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         try {
                             String title = document.getString("itemName");
-                            String message = " has requested your donation!";
+                            String message = document.getString("message");
                             Long timestamp = document.getLong("timestamp");
                             String location = document.getString("location");
                             String imgUrl = document.getString("imageUrl");

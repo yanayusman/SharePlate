@@ -185,9 +185,70 @@ public class CommunityDetailsFragment extends Fragment {
                 .add(eventDetails)
                 .addOnSuccessListener(documentReference -> {
                     Toast.makeText(view.getContext(), "Event joined successfully!", Toast.LENGTH_SHORT).show();
+
+                    storeNotificationForOwner(currentEventItem, currentUserEmail);
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(view.getContext(), "Failed to join event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void storeNotificationForOwner(Event item, String requesterEmail) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Fetch the username from the users collection
+        db.collection("users")
+                .whereEqualTo("email", requesterEmail)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    String requesterUsername = "Unknown User";
+                    if (!querySnapshot.isEmpty()) {
+                        requesterUsername = querySnapshot.getDocuments().get(0).getString("username");
+                    }
+
+                    Map<String, Object> notificationData = new HashMap<>();
+                    notificationData.put("ownerEmail", item.getEmail());
+                    notificationData.put("itemId", item.getDocumentId());
+                    notificationData.put("itemName", item.getName());
+                    notificationData.put("requesterEmail", requesterEmail);
+                    notificationData.put("location", item.getLocation());
+                    notificationData.put("imageUrl", item.getImageUrl());
+                    notificationData.put("timestamp", System.currentTimeMillis());
+                    notificationData.put("status", "unread");
+                    notificationData.put("message", requesterUsername + " has joined your event!");
+
+                    db.collection("notifications")
+                            .add(notificationData)
+                            .addOnSuccessListener(documentReference -> {
+                                Log.d("Notification", "Notification stored successfully");
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("NotificationError", "Failed to store notification: " + e.getMessage());
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("UserQueryError", "Failed to fetch requester username: " + e.getMessage());
+
+                    // Fallback: Store notification with requester email if username fetch fails
+                    Map<String, Object> notificationData = new HashMap<>();
+                    notificationData.put("ownerEmail", item.getEmail());
+                    notificationData.put("itemId", item.getDocumentId());
+                    notificationData.put("itemName", item.getName());
+                    notificationData.put("requesterEmail", requesterEmail);
+                    notificationData.put("location", item.getLocation());
+                    notificationData.put("imageUrl", item.getImageUrl());
+                    notificationData.put("timestamp", System.currentTimeMillis());
+                    notificationData.put("status", "unread");
+                    notificationData.put("message", requesterEmail + " has joined your event!");
+
+                    db.collection("notifications")
+                            .add(notificationData)
+                            .addOnSuccessListener(documentReference -> {
+                                Log.d("Notification", "Notification stored successfully (fallback to email)");
+                            })
+                            .addOnFailureListener(err -> {
+                                Log.e("NotificationError", "Failed to store notification (fallback): " + err.getMessage());
+                            });
                 });
     }
 
@@ -292,17 +353,13 @@ public class CommunityDetailsFragment extends Fragment {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users")
-                .whereEqualTo("email", item.getEmail()) // Query the 'email' field
+                .whereEqualTo("email", item.getEmail())
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
-                        // Get the first matching document
                         DocumentSnapshot document = querySnapshot.getDocuments().get(0);
-                        // Extract the username
                         String username = document.getString("username");
                         ownerUsername.setText(username);
-                        // Log or use the username
                         Log.d("Firestore", "Fetched username: " + username);
-
                 })
                 .addOnFailureListener(e -> {
                     // Handle errors

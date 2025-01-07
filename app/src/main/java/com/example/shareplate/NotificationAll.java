@@ -91,7 +91,6 @@ public class NotificationAll extends Fragment {
 
     private void addNotificationView(Notification notification) {
         View eventItem = getLayoutInflater().inflate(R.layout.notification_view, eventGrid, false);
-
         ImageView notificationImg = eventItem.findViewById(R.id.item_image);
         TextView notificationTitle = eventItem.findViewById(R.id.item_name);
         TextView notificationDate = eventItem.findViewById(R.id.item_date);
@@ -109,33 +108,10 @@ public class NotificationAll extends Fragment {
             notificationImg.setImageResource(0);
         }
 
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        db.collection("users")
-                .whereEqualTo("email", notification.getRequesterEmail())
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    String requesterUsername = "Unknown User";
-                    if (!querySnapshot.isEmpty()) {
-                        // Fetch the username from the first document
-                        requesterUsername = querySnapshot.getDocuments().get(0).getString("username");
-                    }
-
-                    // Update the UI with fetched username and other notification details
-                    notificationTitle.setText(notification.getTitle());
-                    notificationDate.setText("Posted on: " + notification.getTimestamp());
-                    notificationMessage.setText((requesterUsername != null ? requesterUsername : "Unknown User") + notification.getMessage());
-                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("AddNotificationView", "Failed to fetch requester username: " + e.getMessage());
-
-                    // Fallback to setting other notification details
-                    notificationTitle.setText(notification.getTitle());
-                    notificationDate.setText("Posted on: " + notification.getTimestamp());
-                    notificationMessage.setText("Unknown User " + notification.getMessage());
-                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-                });
+        notificationTitle.setText(notification.getTitle());
+        notificationDate.setText("Posted on : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+        notificationLocation.setText("Location : " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+        notificationMessage.setText("Description : " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
 
         eventItem.setOnClickListener(v -> {
             NotificationFragment detailFragment = NotificationFragment.newInstance(notification);

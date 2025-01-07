@@ -31,7 +31,7 @@ import java.util.List;
 // It handles the display of all notifications by using a RecyclerView to show each notification item.
 
 public class NotificationFragment extends Fragment {
-    private static final String ARG_NOTIFICATION = "notifications";
+    private static final String ARG_NOTIFICATION = "notification";
     private BroadcastReceiver profileUpdateReceiver;
     private SwipeRefreshLayout swipeRefreshLayout;
     private Notification notification;
@@ -134,32 +134,10 @@ public class NotificationFragment extends Fragment {
             notiImg.setImageResource(0);
         }
 
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        notiTitle.setText(notification.getTitle());
+        notiTimestamp.setText("Posted on : " + (notification.getTimestamp()));
+        notiMessage.setText(notification.getMessage());
+        notiLocation.setText("Location: " +(notification.getLocation()));
 
-        db.collection("users")
-                .whereEqualTo("email", notification.getRequesterEmail())
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    String requesterUsername = "Unknown User";
-                    if (!querySnapshot.isEmpty()) {
-                        // Fetch the username from the first document
-                        requesterUsername = querySnapshot.getDocuments().get(0).getString("username");
-                    }
-
-                    // Update the UI with fetched username and other notification details
-                    notiTitle.setText(notification.getTitle());
-                    notiTimestamp.setText("Posted on: " + notification.getTimestamp());
-                    notiMessage.setText((requesterUsername != null ? requesterUsername : "Unknown User") + notification.getMessage());
-                    notiLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("AddNotificationView", "Failed to fetch requester username: " + e.getMessage());
-
-                    // Fallback to setting other notification details
-                    notiTitle.setText(notification.getTitle());
-                    notiTimestamp.setText("Posted on: " + notification.getTimestamp());
-                    notiMessage.setText("Unknown User " + notification.getMessage());
-                    notiLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-                });
     }
 }
