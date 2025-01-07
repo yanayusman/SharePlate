@@ -90,26 +90,6 @@ public class ProfilePage extends Fragment {
         };
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Register the receiver
-        if (getActivity() != null) {
-            LocalBroadcastManager.getInstance(getActivity())
-                    .registerReceiver(statsUpdateReceiver, new IntentFilter("profile.stats.updated"));
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        // Unregister the receiver
-        if (getActivity() != null) {
-            LocalBroadcastManager.getInstance(getActivity())
-                    .unregisterReceiver(statsUpdateReceiver);
-        }
-    }
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {

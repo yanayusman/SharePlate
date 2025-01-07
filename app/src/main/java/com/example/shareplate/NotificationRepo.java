@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class NotificationRepo {
     private static final String TAG = "NotificationRepo";
-    private static final String COLLECTION_NAME = "notification";
+    private static final String COLLECTION_NAME = "notifications";
     private final FirebaseFirestore db;
 
     public NotificationRepo() {
@@ -32,23 +32,27 @@ public class NotificationRepo {
     }
 
     public void getAllNotification(NotificationRepo.OnNotificationLoadedListener listener) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserEmail = currentUser.getEmail();
         db.collection(COLLECTION_NAME)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Notification> items = new ArrayList<>();
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         try {
-                            String title = document.getString("title");
-                            String message = document.getString("message");
-                            String timestamp = document.getString("timestamp");
+                            String title = document.getString("itemName");
+                            String message = " has requested your donation!";
+                            Long timestamp = document.getLong("timestamp");
                             String location = document.getString("location");
-                            String imgUrl = document.getString("imgUrl");
+                            String imgUrl = document.getString("imageUrl");
+                            String ownerEmail = document.getString("ownerEmail");
+                            String requesterEmail = document.getString("requesterEmail");
 
-                            Long createdAt = document.getLong("createdAt");
-
-                            if (title != null && !title.isEmpty()) {
-                                Notification item = new Notification(title, message, timestamp, location, imgUrl);
-                                items.add(item);
+                            if (currentUserEmail != null && currentUserEmail.equals(ownerEmail)) {
+                                if (title != null && !title.isEmpty()) {
+                                    Notification item = new Notification(title, message, timestamp, location, imgUrl, ownerEmail, requesterEmail);
+                                    items.add(item);
+                                }
                             }
                         } catch (Exception e) {
                             System.err.println("Error parsing document: " + e.getMessage());

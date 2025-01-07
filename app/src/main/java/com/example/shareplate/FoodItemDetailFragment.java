@@ -411,13 +411,13 @@ public class FoodItemDetailFragment extends Fragment {
                             @Override
                             public void onUpdateSuccess() {
                                 if (getContext() != null) {
-                                    Toast.makeText(getContext(), "Request accepted successfully", 
-                                            Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getContext(), "Request accepted successfully", Toast.LENGTH_SHORT).show();
                                     refreshFoodDetails();
-                                    
+
+                                    storeNotificationForOwner(item, currentUser.getEmail());
+
                                     // Broadcast the update
-                                    Intent refreshIntent = new Intent("profile.stats.updated");
-                                    LocalBroadcastManager.getInstance(requireContext())
+                                    Intent refreshIntent = new Intent("profile.stats.updated"); LocalBroadcastManager.getInstance(requireContext())
                                             .sendBroadcast(refreshIntent);
                                 }
                             }
@@ -436,6 +436,31 @@ public class FoodItemDetailFragment extends Fragment {
                 Toast.makeText(getContext(), "Failed to create request: " + e.getMessage(), 
                         Toast.LENGTH_SHORT).show();
             });
+    }
+
+    private void storeNotificationForOwner(DonationItem item, String requesterEmail) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Create notification data
+        Map<String, Object> notificationData = new HashMap<>();
+        notificationData.put("ownerEmail", item.getEmail());
+        notificationData.put("itemId", item.getDocumentId());
+        notificationData.put("itemName", item.getName());
+        notificationData.put("requesterEmail", requesterEmail);
+        notificationData.put("location", item.getLocation());
+        notificationData.put("imageUrl", item.getImageUrl());
+        notificationData.put("timestamp", System.currentTimeMillis());
+        notificationData.put("status", "unread");
+
+        // Store the notification in the Firestore notification collection
+        db.collection("notifications")
+                .add(notificationData)
+                .addOnSuccessListener(documentReference -> {
+                    Log.d("Notification", "Notification stored successfully");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("NotificationError", "Failed to store notification: " + e.getMessage());
+                });
     }
 
     @Override
