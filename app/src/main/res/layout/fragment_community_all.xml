@@ -201,42 +201,6 @@
                     app:layout_constraintStart_toEndOf="@+id/interestedButton"
                     app:layout_constraintWidth_percent="0.4" />
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/filterChipGroup"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    app:chipSpacingHorizontal="8dp"
-                    app:singleSelection="true"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/interestedButton">
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/allEventsButton"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="All Events"
-                        android:textColor="#228B22"
-                        android:checked="true" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/volunteeringButton"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Volunteering" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/campaignsButton"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Campaigns" />
-
-                </com.google.android.material.chip.ChipGroup>
-
                 <View
                     android:id="@+id/view"
                     android:layout_width="0dp"
@@ -247,6 +211,52 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintWidth_percent="0.95"
                     app:layout_constraintTop_toTopOf="parent" />
+
+                <LinearLayout
+                    android:id="@+id/filterButtonLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="8dp"
+                    android:orientation="horizontal"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/interestedButton">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/allEventsButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:layout_marginEnd="4dp"
+                        android:text="All"
+                        android:textColor="@color/button_green"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        app:strokeColor="@color/button_green"
+                        app:cornerRadius="100dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/volunteeringButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="7"
+                        android:layout_marginHorizontal="8dp"
+                        android:text="Volunteering"
+                        android:textColor="@color/button_green"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        app:strokeColor="@color/button_green"
+                        app:cornerRadius="100dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/campaignsButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="6"
+                        android:layout_marginStart="4dp"
+                        android:text="Campaigns"
+                        android:textColor="@color/button_green"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        app:strokeColor="@color/button_green"
+                        app:cornerRadius="100dp"/>
+                </LinearLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

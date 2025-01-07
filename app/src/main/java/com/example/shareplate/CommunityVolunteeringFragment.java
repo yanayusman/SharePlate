@@ -1,6 +1,8 @@
 package com.example.shareplate;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -26,11 +28,14 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
+
+import org.checkerframework.checker.units.qual.C;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,7 +58,7 @@ public class CommunityVolunteeringFragment extends Fragment {
     private List<Event> volunteeringEvents = new ArrayList<>();
     private List<Event> campaignEvents = new ArrayList<>();
 
-    private Chip allEventsButton, volunteeringButton, campaignsButton;
+    private MaterialButton allEventsButton, volunteeringButton, campaignsButton;
 
     @Nullable
     @Override
@@ -124,10 +129,25 @@ public class CommunityVolunteeringFragment extends Fragment {
             }
         });
 
+        volunteeringButton.setBackgroundColor(getResources().getColor(R.color.button_green));
+        volunteeringButton.setStrokeColor(ColorStateList.valueOf(getResources().getColor(R.color.button_green)));
+        volunteeringButton.setTextColor(Color.WHITE);
+
         // Initialize views
-        allEventsButton.setOnClickListener(v -> navigateToFragment(new CommunityAllFragment()));
-        volunteeringButton.setOnClickListener(v -> navigateToFragment(new CommunityVolunteeringFragment()));
-        campaignsButton.setOnClickListener(v -> navigateToFragment(new CommunityCampaignsFragment()));
+        allEventsButton.setOnClickListener(v -> {
+            updateFilterButtonStates(allEventsButton, volunteeringButton, campaignsButton);
+            navigateToFragment(new CommunityAllFragment());
+        });
+
+        volunteeringButton.setOnClickListener(v -> {
+            updateFilterButtonStates(volunteeringButton, allEventsButton, campaignsButton);
+            navigateToFragment(new CommunityVolunteeringFragment());
+        });
+
+        campaignsButton.setOnClickListener(v -> {
+            updateFilterButtonStates(campaignsButton, allEventsButton, volunteeringButton);
+            navigateToFragment(new CommunityCampaignsFragment());
+        });
 
         return view;
     }
@@ -327,6 +347,30 @@ public class CommunityVolunteeringFragment extends Fragment {
             for (Event event : filteredEvents) {
                 addEventsView(event);
             }
+        }
+    }
+
+    private void updateFilterButtonStates(Button selectedButton, Button... otherButtons) {
+        // Reset all buttons to unselected state
+        allEventsButton.setStrokeColor(ColorStateList.valueOf(getResources().getColor(R.color.button_green)));
+        volunteeringButton.setStrokeColor(ColorStateList.valueOf(getResources().getColor(R.color.button_green)));
+        campaignsButton.setStrokeColor(ColorStateList.valueOf(getResources().getColor(R.color.button_green)));
+
+        allEventsButton.setBackgroundColor(Color.TRANSPARENT);
+        volunteeringButton.setBackgroundColor(Color.TRANSPARENT);
+        campaignsButton.setBackgroundColor(Color.TRANSPARENT);
+
+        allEventsButton.setTextColor(getResources().getColor(R.color.button_green));
+        volunteeringButton.setTextColor(getResources().getColor(R.color.button_green));
+        campaignsButton.setTextColor(getResources().getColor(R.color.button_green));
+
+        selectedButton.setBackgroundColor(getResources().getColor(R.color.button_green));
+        selectedButton.setTextColor(ColorStateList.valueOf(getResources().getColor(R.color.button_green)));
+        selectedButton.setTextColor(Color.WHITE);
+
+        for (Button button : otherButtons) {
+            button.setBackgroundColor(Color.WHITE);
+            button.setTextColor(Color.BLACK);
         }
     }
 }
