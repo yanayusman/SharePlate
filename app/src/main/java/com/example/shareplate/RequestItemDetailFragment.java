@@ -11,6 +11,7 @@ import android.widget.Toast;
 import android.view.ViewOutlineProvider;
 import android.graphics.Outline;
 import android.app.AlertDialog;
+import java.io.Serializable;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -38,10 +39,10 @@ public class RequestItemDetailFragment extends Fragment {
     private RequestFood currentRequestItem;
     private RecyclerView detailRecyclerView;
 
-    public static RequestItemDetailFragment newInstance(RequestFood item) {
+    public static RequestItemDetailFragment newInstance(Object item) {
         RequestItemDetailFragment fragment = new RequestItemDetailFragment();
         Bundle args = new Bundle();
-        args.putSerializable(ARG_REQUEST_ITEM, item);
+        args.putSerializable(ARG_REQUEST_ITEM, (Serializable) item);
         fragment.setArguments(args);
         return fragment;
     }
@@ -56,10 +57,18 @@ public class RequestItemDetailFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Get the DonationItem from arguments once
+        // Get the RequestFood from arguments once
         if (getArguments() != null) {
-            currentRequestItem = (RequestFood) getArguments().getSerializable(ARG_REQUEST_ITEM);
+            Object item = getArguments().getSerializable(ARG_REQUEST_ITEM);
+            if (item instanceof RequestFood) {
+                currentRequestItem = (RequestFood) item;
+            } else if (item instanceof DonationItem) {
+                // Handle DonationItem case - you might want to convert it to RequestFood
+                DonationItem donationItem = (DonationItem) item;
+                currentRequestItem = convertDonationItemToRequestFood(donationItem);
+            }
         }
+        
         if (currentRequestItem == null) {
             return;
         }
@@ -478,15 +487,23 @@ public class RequestItemDetailFragment extends Fragment {
     }
 
     private void loadOwnerProfileImage(String ownerUsername, ImageView ownerProfileImage) {
-        // Get the DonationItem from arguments
+        // Get the item from arguments
         if (getArguments() != null) {
-            RequestFood donationItem = (RequestFood) getArguments().getSerializable(ARG_REQUEST_ITEM);
-            if (donationItem != null && donationItem.getOwnerProfileImageUrl() != null
-                    && !donationItem.getOwnerProfileImageUrl().isEmpty()) {
+            Object item = getArguments().getSerializable(ARG_REQUEST_ITEM);
+            String profileImageUrl = null;
+            
+            // Determine the profile image URL based on the item type
+            if (item instanceof RequestFood) {
+                profileImageUrl = ((RequestFood) item).getOwnerProfileImageUrl();
+            } else if (item instanceof DonationItem) {
+                profileImageUrl = ((DonationItem) item).getOwnerProfileImageUrl();
+            }
+
+            if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
                 // Load the profile image using the stored URL
                 if (getContext() != null) {
                     Glide.with(getContext())
-                            .load(donationItem.getOwnerProfileImageUrl())
+                            .load(profileImageUrl)
                             .circleCrop()
                             .placeholder(R.drawable.profile)
                             .error(R.drawable.profile)
@@ -502,6 +519,22 @@ public class RequestItemDetailFragment extends Fragment {
                 }
             }
         }
+    }
+
+    private RequestFood convertDonationItemToRequestFood(DonationItem item) {
+        return new RequestFood(
+            item.getName(),
+            item.getFoodCategory(),
+            "", // urgencyLevel - set default or get from somewhere
+            item.getQuantity(),
+            item.getPickupTime(),
+            item.getLocation(),
+            item.getImageResourceId(),
+            item.getImageUrl(),
+            item.getDonateType(),
+            item.getOwnerProfileImageUrl(),
+            item.getEmail()
+        );
     }
 
 }
