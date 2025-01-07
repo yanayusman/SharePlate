@@ -2,8 +2,13 @@ package com.example.shareplate;
 
 import static android.app.Activity.RESULT_OK;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -20,9 +25,19 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.widget.Autocomplete;
 import com.google.android.libraries.places.widget.AutocompleteActivity;
@@ -31,12 +46,16 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class EditProfile extends Fragment {
+
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
 
     private EditText usernameEditText, emailEditText, phoneNumberEditText, passwordEditText, locationDisplay;
     private Button updateButton;
@@ -45,6 +64,8 @@ public class EditProfile extends Fragment {
     private FirebaseFirestore db;
     private String userEmail;
     private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
+
+    private FusedLocationProviderClient fusedLocationProviderClient;
 
     @Nullable
     @Override
@@ -60,6 +81,7 @@ public class EditProfile extends Fragment {
         // Initialize Firebase instances
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext());
 
         usernameEditText = view.findViewById(R.id.username);
         emailEditText = view.findViewById(R.id.email);
@@ -84,20 +106,76 @@ public class EditProfile extends Fragment {
         // Load user profile data from Firestore
         loadUserProfile();
 
-        selectLocationButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openLocationPicker();
+        selectLocationButton.setOnClickListener(v -> {
+            openMapFragment();
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                getCurrentLocation();
+            } else {
+                ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 99);
             }
         });
-        if (backButton != null) {
-            backButton.setOnClickListener(v -> {
-                requireActivity().getSupportFragmentManager().popBackStack();
-            });
-        }
 
         // Set up the update button
         updateButton.setOnClickListener(v -> updateUserProfile());
+    }
+
+    private void openMapFragment() {
+        // Load the MapsFragment into the container
+        SupportMapFragment mapFragment = new SupportMapFragment();
+
+        // Pass the map fragment dynamically
+        getChildFragmentManager()
+                .beginTransaction()
+                .replace(R.id.maps_container, mapFragment)
+                .addToBackStack(null)
+                .commit();
+
+        // Make the container visible
+        View mapsContainer = getView().findViewById(R.id.maps_container);
+        if (mapsContainer != null) {
+            mapsContainer.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void getCurrentLocation() {
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(),
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 99);
+            return;
+        }
+
+        fusedLocationProviderClient.getLastLocation().addOnSuccessListener(requireActivity(), new OnSuccessListener<Location>() {
+            @Override
+                public void onSuccess(Location location) {
+                    // Check if the location is not null
+                    if (location != null) {
+                        double latitude = location.getLatitude();
+                        double longitude = location.getLongitude();
+
+                        // Use Geocoder to convert coordinates into address
+                        Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
+                        try {
+                            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+
+                            if (addresses != null && !addresses.isEmpty()) {
+                                // Get the first address
+                                String address = addresses.get(0).getAddressLine(0);
+                                locationDisplay.setText(address);  // Display the address
+                            } else {
+                                locationDisplay.setText("No address found.");
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            locationDisplay.setText("Error in geocoding.");
+                        }
+                    } else {
+                        locationDisplay.setText("Unable to get current location.");
+                    }
+                }
+            });
     }
 
     private final ActivityResultLauncher<Intent> locationPickerLauncher = registerForActivityResult(
@@ -109,7 +187,6 @@ public class EditProfile extends Fragment {
                 }
             }
     );
-
     private void openLocationPicker() {
         if (getActivity() == null) {
             Log.e("EditProfile", "Activity is null, cannot open location picker.");
@@ -218,7 +295,4 @@ public class EditProfile extends Fragment {
             }
         }
     }
-
 }
-
-
