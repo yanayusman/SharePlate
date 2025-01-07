@@ -53,7 +53,7 @@ public class ProfilePage extends Fragment {
 
     private final String SUBCOLLECTION_USER = "joinedEvents";
     private ImageView profileImage, notificationIV;
-    private TextView usernameTextView, donatedCountTV, requestedCountTV, campaignsCountTV, volunteerCountTV;
+    private TextView  donatedCountTV, requestedCountTV, campaignsCountTV, volunteerCountTV, profileUsername;
     private MaterialButton editProfileButton, rateAppButton, termsConditionButton, signOutButton, resetPass;
     private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
@@ -115,14 +115,12 @@ public class ProfilePage extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_profile_page, container, false);
 
-
-
-
         Log.d(TAG, "onCreateView: Initializing views");
 
         // Initialize views
         profileImage = view.findViewById(R.id.profile_image);
-        usernameTextView = view.findViewById(R.id.username);
+        //usernameTextView = view.findViewById(R.id.username_text);
+        profileUsername = view.findViewById(R.id.profile_username);
         signOutButton = view.findViewById(R.id.signOutButton);
         if (signOutButton == null) {
             Log.e(TAG, "onCreateView: signOutButton not found in layout");
@@ -223,17 +221,22 @@ public class ProfilePage extends Fragment {
                         if (document.exists()) {
                             String username = document.getString("username");
                             if (username == null || username.isEmpty()) {
-                                // If username is not set, use email prefix as default
                                 username = userEmail.substring(0, userEmail.indexOf('@'));
-                                
-                                // Update the username in Firestore
+
                                 document.getReference().update("username", username)
                                         .addOnFailureListener(e -> {
                                             Log.e("FirestoreError", "Error updating username", e);
                                         });
                             }
-                            // Display username and fetch counts
-                            usernameTextView.setText(username);
+
+                            // Add null checks before setting text
+//                            if (usernameTextView != null) {
+//                                usernameTextView.setText(username);
+//                            }
+                            if (profileUsername != null) {
+                                profileUsername.setText(username);
+                            }
+
                             fetchDonatedCount(username);
                             fetchRequestedCount(username);
                             fetchCampaignsCount(username);
@@ -252,7 +255,13 @@ public class ProfilePage extends Fragment {
                                     .document(userEmail)
                                     .set(userData)
                                     .addOnSuccessListener(aVoid -> {
-                                        usernameTextView.setText(defaultUsername);
+                                        // Add null checks before setting text
+//                                        if (usernameTextView != null) {
+//                                            usernameTextView.setText(defaultUsername);
+//                                        }
+                                        if (profileUsername != null) {
+                                            profileUsername.setText(defaultUsername);
+                                        }
                                         fetchDonatedCount(defaultUsername);
                                         fetchRequestedCount(defaultUsername);
                                         fetchCampaignsCount(defaultUsername);
@@ -269,9 +278,58 @@ public class ProfilePage extends Fragment {
         }
     }
 
-    /**
-     * Set a click listener for the "Reset Password" button.
-     */
+    // Add a new method to handle username updates
+    private BroadcastReceiver usernameUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String newUsername = intent.getStringExtra("newUsername");
+            if (newUsername != null && !newUsername.isEmpty()) {
+//                usernameTextView.setText(newUsername);
+                profileUsername.setText(newUsername);
+            }
+        }
+    };
+
+    private BroadcastReceiver profileUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String newProfileImageUrl = intent.getStringExtra("newProfileImageUrl");
+            if (newProfileImageUrl != null && !newProfileImageUrl.isEmpty() && profileImage != null) {
+                Glide.with(ProfilePage.this)
+                        .load(newProfileImageUrl)
+                        .circleCrop()
+                        .into(profileImage);
+            }
+        }
+    };
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Register both receivers
+        if (getActivity() != null) {
+            LocalBroadcastManager.getInstance(getActivity())
+                    .registerReceiver(profileUpdateReceiver, new IntentFilter("profile.image.updated"));
+            LocalBroadcastManager.getInstance(getActivity())
+                    .registerReceiver(usernameUpdateReceiver, new IntentFilter("profile.username.updated"));
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Unregister both receivers
+        if (getActivity() != null) {
+            LocalBroadcastManager.getInstance(getActivity())
+                    .unregisterReceiver(profileUpdateReceiver);
+            LocalBroadcastManager.getInstance(getActivity())
+                    .unregisterReceiver(usernameUpdateReceiver);
+        }
+    }
+
+                            /**
+                             * Set a click listener for the "Reset Password" button.
+                             */
     private void setResetPassClickListener() {
         resetPass.setOnClickListener(v -> getParentFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, new ResetPasswordFragment())

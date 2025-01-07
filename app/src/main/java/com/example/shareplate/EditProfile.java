@@ -23,6 +23,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
@@ -174,11 +175,17 @@ public class EditProfile extends Fragment {
                     db.collection("users").document(userEmail)
                             .update("profileImage", uri.toString())
                             .addOnSuccessListener(aVoid -> {
+                                // Broadcast profile image update
+                                Intent imageIntent = new Intent("profile.image.updated");
+                                imageIntent.putExtra("newProfileImageUrl", uri.toString());
+                                LocalBroadcastManager.getInstance(requireContext())
+                                        .sendBroadcast(imageIntent);
+
                                 Toast.makeText(getContext(), "Profile image updated!", Toast.LENGTH_SHORT).show();
                                 Glide.with(this)
                                         .load(uri.toString())
                                         .circleCrop()
-                                        .into(profileImage); // Update the ImageView immediately
+                                        .into(profileImage);
                             })
                             .addOnFailureListener(e -> {
                                 Toast.makeText(getContext(), "Failed to update Firestore: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -239,7 +246,6 @@ public class EditProfile extends Fragment {
         // Retrieve updated data
         String username = usernameEditText.getText().toString().trim();
         String phoneNumber = phoneNumberEditText.getText().toString().trim();
-        String newPassword = passwordEditText.getText().toString().trim();
         String location = locationDisplay.getText().toString().trim();
 
         // Validate input fields
@@ -267,6 +273,12 @@ public class EditProfile extends Fragment {
                         db.collection("users").document(userEmail)
                                 .update(updates)
                                 .addOnSuccessListener(aVoid -> {
+                                    // Broadcast username update
+                                    Intent usernameIntent = new Intent("profile.username.updated");
+                                    usernameIntent.putExtra("newUsername", username);
+                                    LocalBroadcastManager.getInstance(requireContext())
+                                            .sendBroadcast(usernameIntent);
+
                                     Toast.makeText(getContext(), "Profile updated successfully!", Toast.LENGTH_SHORT).show();
                                     requireActivity().getSupportFragmentManager().popBackStack();
                                 })
@@ -275,10 +287,16 @@ public class EditProfile extends Fragment {
                                 });
                     } else {
                         // Create a new document if it doesn't exist
-                        updates.put("email", userEmail); // Add email to the document
+                        updates.put("email", userEmail);
                         db.collection("users").document(userEmail)
                                 .set(updates)
                                 .addOnSuccessListener(aVoid -> {
+                                    // Broadcast username update
+                                    Intent usernameIntent = new Intent("profile.username.updated");
+                                    usernameIntent.putExtra("newUsername", username);
+                                    LocalBroadcastManager.getInstance(requireContext())
+                                            .sendBroadcast(usernameIntent);
+
                                     Toast.makeText(getContext(), "Profile created successfully!", Toast.LENGTH_SHORT).show();
                                     requireActivity().getSupportFragmentManager().popBackStack();
                                 })
@@ -290,19 +308,5 @@ public class EditProfile extends Fragment {
                 .addOnFailureListener(e -> {
                     Toast.makeText(getContext(), "Failed to fetch user details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
-
-        // Update password in FirebaseAuth if provided
-        if (!newPassword.isEmpty()) {
-            FirebaseUser currentUser = auth.getCurrentUser();
-            if (currentUser != null) {
-                currentUser.updatePassword(newPassword)
-                        .addOnSuccessListener(aVoid -> {
-                            Toast.makeText(getContext(), "Password updated successfully!", Toast.LENGTH_SHORT).show();
-                        })
-                        .addOnFailureListener(e -> {
-                            Toast.makeText(getContext(), "Failed to update password: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        });
-            }
-        }
     }
 }
