@@ -99,7 +99,7 @@
 
             <!-- Username -->
             <EditText
-                android:id="@+id/username"
+                android:id="@+id/usernameEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
@@ -111,7 +111,7 @@
 
             <!-- Email -->
             <EditText
-                android:id="@+id/email"
+                android:id="@+id/emailEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
@@ -124,7 +124,7 @@
 
             <!-- Phone Number -->
             <EditText
-                android:id="@+id/phone_number"
+                android:id="@+id/phoneNumberEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
@@ -153,7 +153,7 @@
                     android:orientation="horizontal">
                     <!-- Location Display -->
                     <EditText
-                        android:id="@+id/location_display"
+                        android:id="@+id/locationDisplay"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -165,7 +165,7 @@
                         android:layout_marginEnd="8dp" />
                     <!-- Location Icon -->
                     <ImageButton
-                        android:id="@+id/select_location_button"
+                        android:id="@+id/selectLocationButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:background="@android:color/transparent"
@@ -186,7 +186,7 @@
 
             <!-- Update Button -->
             <Button
-                android:id="@+id/update_button"
+                android:id="@+id/updateProfileButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
