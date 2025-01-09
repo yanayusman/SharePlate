@@ -5,10 +5,12 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.example.shareplate.ProfilePage;
 
 public class HomePageActivity extends AppCompatActivity {
@@ -18,6 +20,7 @@ public class HomePageActivity extends AppCompatActivity {
     private static final int TRANSACTION_DEBOUNCE_TIME = 300; // milliseconds
     private Handler handler = new Handler();
     private Runnable pendingRunnable;
+    private FloatingActionButton chatFab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +54,13 @@ public class HomePageActivity extends AppCompatActivity {
                 return true;
             }
             return false;
+        });
+
+        // Initialize chat button
+        chatFab = findViewById(R.id.chatFab);
+        chatFab.setOnClickListener(v -> {
+            Intent intent = new Intent(HomePageActivity.this, ChatActivity.class);
+            startActivity(intent);
         });
 
         // Load the HomeFragment initially

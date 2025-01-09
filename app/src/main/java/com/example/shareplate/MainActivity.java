@@ -16,13 +16,11 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.textview.MaterialTextView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.example.shareplate.SignupActivity;
 
 public class MainActivity extends AppCompatActivity {
     private MaterialTextView logInLink;
     private Button getStartedButton;
     private FirebaseAuth mAuth;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,46 +31,38 @@ public class MainActivity extends AppCompatActivity {
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
-        ConstraintLayout constraintLayout = findViewById(R.id.main);
+        // Initialize views
+        logInLink = findViewById(R.id.loginLink);
+        getStartedButton = findViewById(R.id.getStartedButton);
 
-        // Check if the background is actually an AnimationDrawable
-        if (constraintLayout.getBackground() instanceof AnimationDrawable) {
-            AnimationDrawable animationDrawable = (AnimationDrawable) constraintLayout.getBackground();
-            animationDrawable.setEnterFadeDuration(2500);
-            animationDrawable.setExitFadeDuration(5000);
-            animationDrawable.start();
-        }
+        // Set up click listeners
+        logInLink.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(intent);
+        });
+
+        getStartedButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SignupActivity.class);
+            startActivity(intent);
+        });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        logInLink = findViewById(R.id.logInLink);
-        logInLink.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-            startActivity(intent);
-        });
-
-        getStartedButton = findViewById(R.id.getStartedButton);
-        getStartedButton.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, SignupActivity.class);
-            startActivity(intent);
-        });
     }
 
     @Override
-    protected void onStart() {
+    public void onStart() {
         super.onStart();
-        // Check if user is signed in and email is verified
+        // Check if user is signed in (non-null) and update UI accordingly.
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser != null && currentUser.isEmailVerified()) {
-            // User is signed in and email is verified, go to HomePage
+        if (currentUser != null) {
+            // User is already signed in, redirect to HomePageActivity
             Intent intent = new Intent(MainActivity.this, HomePageActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
-            finish();
+            finish(); // Close MainActivity so user can't go back to it
         }
     }
 }

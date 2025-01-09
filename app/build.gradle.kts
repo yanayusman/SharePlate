@@ -1,8 +1,8 @@
 plugins {
-    alias(libs.plugins.android.application)
+    id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
-    alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 android {
@@ -17,6 +17,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "GEMINI_API_KEY",
+            "\"${project.findProperty("GEMINI_API_KEY") ?: ""}\""
+        )
     }
 
     buildTypes {
@@ -27,28 +33,55 @@ android {
                 "proguard-rules.pro"
             )
         }
-        debug {
-            isDebuggable = true
-        }
     }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        jvmToolchain(17)
     }
-
 }
 
 dependencies {
-    // Firebase BoM - Use this to manage Firebase dependency versions
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0")) // Use the latest version
+    // Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
 
-    // Firebase Authentication
-    implementation("com.google.firebase:firebase-auth-ktx") // Use the Kotlin extensions
-    implementation("com.google.firebase:firebase-analytics-ktx") // Use the Kotlin extensions
+    // AndroidX
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.cardview:cardview:1.0.0")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+
+    // Material Design
+    implementation("com.google.android.material:material:1.11.0")
+
+    // Kotlin Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
+    // Gemini API
+    implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
+
+    // Image Loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+
+    // Testing
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
     // Google Play Services - Auth and Identity
     implementation("com.google.android.gms:play-services-auth:21.3.0") // Match version with Credential Manager
@@ -71,11 +104,6 @@ dependencies {
     implementation(libs.firebase.storage)
     implementation(libs.places)
 
-    // Testing
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.ext.junit)
-    androidTestImplementation(libs.espresso.core)
-
     // Other Libraries
     implementation("com.makeramen:roundedimageview:2.3.0")
     implementation("androidx.cardview:cardview:1.0.0")
@@ -83,7 +111,6 @@ dependencies {
 
     // Google Play Services Tasks (ensure latest)
     implementation("com.google.android.gms:play-services-tasks:18.2.0")
-
 
 
     // Firebase Auth and Google Play Services
@@ -99,19 +126,22 @@ dependencies {
 
     // Add Glide for image loading (optional but recommended)
     implementation("com.github.bumptech.glide:glide:4.16.0")
-    
-     // LocalBroadcastManager
+
+    // LocalBroadcastManager
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
 
-    implementation ("com.google.firebase:firebase-messaging:24.1.0")
+    implementation("com.google.firebase:firebase-messaging:24.1.0")
 
     // Google Play Service Location
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.android.gms:play-services-maps:19.0.0")
     implementation("com.google.android.libraries.places:places:3.3.0")
 
+    implementation ("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation ("org.json:json:20210307")
+    // Other dependencies
 
 
-    }
+}
 
 

@@ -36,4 +36,6 @@
     <!-- Dialog Colors -->
     <color name="dialog_color_1">#FDD736</color>
     <color name="dialog_color_2">@color/primary</color>
+
+    <color name="gray_light">#F5F5F5</color>
 </resources>
