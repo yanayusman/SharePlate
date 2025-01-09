@@ -6,6 +6,10 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
+import io.noties.markwon.Markwon
+import io.noties.markwon.html.HtmlPlugin
+import io.noties.markwon.image.ImagesPlugin
+import io.noties.markwon.linkify.LinkifyPlugin
 
 data class ChatMessage(
     val text: String,
@@ -14,6 +18,16 @@ data class ChatMessage(
 
 class ChatAdapter : RecyclerView.Adapter<ChatAdapter.MessageViewHolder>() {
     private val messages = mutableListOf<ChatMessage>()
+    private lateinit var markwon: Markwon
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
+        markwon = Markwon.builder(recyclerView.context)
+            .usePlugin(HtmlPlugin.create())
+            .usePlugin(ImagesPlugin.create())
+            .usePlugin(LinkifyPlugin.create())
+            .build()
+    }
 
     class MessageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val messageCard: CardView = view.findViewById(R.id.messageCard)
@@ -28,7 +42,13 @@ class ChatAdapter : RecyclerView.Adapter<ChatAdapter.MessageViewHolder>() {
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
         val message = messages[position]
-        holder.messageText.text = message.text
+        
+        // Apply markdown styling
+        if (!message.isUser) {
+            markwon.setMarkdown(holder.messageText, message.text)
+        } else {
+            holder.messageText.text = message.text
+        }
 
         // Set message appearance based on sender
         with(holder.messageCard) {
