@@ -297,6 +297,16 @@ public class NonFoodItemDetail extends Fragment {
 
         // Update buttons visibility based on ownership and status
         updateButtonsVisibility(view, item);
+
+        // Add click listener to location text
+        itemLocation.setOnClickListener(v -> {
+            openLocationInMaps(item.getLocation());
+        });
+        
+        // Make it look clickable
+        itemLocation.setTextColor(getResources().getColor(R.color.button_green));
+        itemLocation.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_location, 0);
+        itemLocation.setPadding(0, 0, 8, 0);
     }
 
     private void updateButtonsVisibility(View view, DonationItem item) {
@@ -584,5 +594,9 @@ public class NonFoodItemDetail extends Fragment {
                 .replace(R.id.fragment_container, editFragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    private void openLocationInMaps(String location) {
+        // ... same implementation as above ...
     }
 }

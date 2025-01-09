@@ -36,6 +36,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.widget.EditText;
 import android.text.InputType;
 import android.view.Gravity;
+import android.net.Uri;
 
 public class FoodItemDetailFragment extends Fragment {
     public static final String ARG_DONATION_ITEM = "donation_item";
@@ -334,6 +335,16 @@ public class FoodItemDetailFragment extends Fragment {
         // Update buttons visibility based on ownership and status
         updateButtonsVisibility(view, item);
         updateFeedbackButtonVisibility(view, item);
+
+        // Add click listener to location text
+        itemLocation.setOnClickListener(v -> {
+            openLocationInMaps(item.getLocation());
+        });
+        
+        // Make it look clickable
+        itemLocation.setTextColor(getResources().getColor(R.color.button_green));
+        itemLocation.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_location, 0);
+        itemLocation.setPadding(0, 0, 8, 0);
     }
 
     private void updateButtonsVisibility(View view, DonationItem item) {
@@ -758,5 +769,30 @@ public class FoodItemDetailFragment extends Fragment {
                     Toast.makeText(getContext(), "Failed to submit feedback: " + e.getMessage(), 
                             Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private void openLocationInMaps(String location) {
+        try {
+            // Create a Uri from the location string
+            Uri gmmIntentUri = Uri.parse("geo:0,0?q=" + Uri.encode(location));
+            
+            // Create an Intent from gmmIntentUri
+            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+            
+            // Make the intent explicit by setting Google Maps package
+            mapIntent.setPackage("com.google.android.apps.maps");
+            
+            // Verify that the intent will resolve to an activity
+            if (mapIntent.resolveActivity(requireActivity().getPackageManager()) != null) {
+                startActivity(mapIntent);
+            } else {
+                // If Google Maps app is not installed, open in browser
+                Uri browserUri = Uri.parse("https://www.google.com/maps/search/?api=1&query=" + Uri.encode(location));
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, browserUri);
+                startActivity(browserIntent);
+            }
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Error opening maps: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 } 
