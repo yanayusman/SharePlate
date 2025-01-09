@@ -6,51 +6,38 @@ SharePlate is an Android application designed to facilitate food and non-food do
 ## Technical Stack
 
 ### Core Technologies
-- Language: Java
+- Language: Java & Kotlin
 - Platform: Android (min SDK 34, target SDK 34)
-- Backend: Firebase (Authentication, Firestore, Storage)
-- Build System: Gradle
+- Backend: Firebase (Authentication, Firestore, Storage, Cloud Messaging)
+- Build System: Gradle with Kotlin DSL
 
 ### Key Dependencies
 
-```44:102:app/build.gradle.kts
+```kotlin:app/build.gradle.kts
 dependencies {
-    // Firebase BoM - Use this to manage Firebase dependency versions
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0")) // Use the latest version
-...
-
-    // Testing
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.ext.junit)
-    androidTestImplementation(libs.espresso.core)
-
-    // Other Libraries
-    implementation("com.makeramen:roundedimageview:2.3.0")
-    implementation("androidx.cardview:cardview:1.0.0")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.0")
-
-    // Google Play Services Tasks (ensure latest)
-    implementation("com.google.android.gms:play-services-tasks:18.2.0")
-
-    // Firebase Auth and Google Play Services
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
+    implementation("com.google.firebase:firebase-messaging:24.1.0")
 
-    // SwipeRefreshLayout
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-
-    // Add Firebase Storage
-    implementation("com.google.firebase:firebase-storage-ktx")
-    implementation("com.google.firebase:firebase-storage:21.0.1")
-
-    // Add Glide for image loading (optional but recommended)
+    // UI Components
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.0")
+    
+    // Image Loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
     
-     // LocalBroadcastManager
-    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+    // Location Services
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.android.libraries.places:places:3.3.0")
+    
+    // AI Integration
+    implementation("com.google.ai.client.generativeai:generativeai:0.1.1")
 }
 ```
-
 
 ## Application Architecture
 
@@ -74,6 +61,7 @@ The app implements the repository pattern for data management:
 - NonFoodItemRepository: Manages non-food donations
 - EventRepo: Manages community events
 - UserRepo: Manages user data
+- RequestFoodRepo/RequestNonFoodRepo: Manages donation requests
 
 ### 2. Features
 
@@ -83,24 +71,34 @@ The app implements the repository pattern for data management:
 - Track donation status
 - Edit and delete donations
 - Search and filter donations
+- Real-time updates with Firebase
 
 #### Request System
 - Create food and non-food requests
 - Specify urgency levels
 - Track request status
 - Location-based matching
+- Request notifications
 
 #### Community Features
 - Event creation and management
 - Volunteering opportunities
 - Community campaigns
 - User interaction and engagement
+- Event status tracking
 
 #### Profile Management
 - User profile customization
 - Donation history tracking
 - Activity statistics
 - Favorites management
+- Profile image upload
+
+#### AI Integration
+- AI-powered chat assistant using Gemini
+- Smart donation recommendations
+- Content moderation
+- User support
 
 ### 3. Security
 
@@ -108,35 +106,19 @@ The app implements the repository pattern for data management:
 - Secure authentication flow
 - Protected database access
 - Encrypted data storage
-
-```171:179:app/src/main/java/com/example/shareplate/SignupActivity.java
-                                        // Send verification email
-                                        user.sendEmailVerification()
-                                                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                                    @Override
-                                                    public void onComplete(@NonNull Task<Void> task) {
-                                                        signupButton.setEnabled(true);
-                                                        if (task.isSuccessful()) {
-                                                            Toast.makeText(SignupActivity.this,
-```
-
+- File storage security
+- Real-time database rules
 
 #### Permissions
-The app requires and handles the following permissions:
-
-```5:14:app/src/main/AndroidManifest.xml
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
+```xml:app/src/main/AndroidManifest.xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 ```
-
 
 ### 4. User Interface
 
@@ -145,6 +127,7 @@ The app requires and handles the following permissions:
 - Consistent theming across the app
 - Responsive layouts
 - Custom styles and themes
+- Dark mode support
 
 #### Key UI Components
 - Custom toolbar with search functionality
@@ -152,11 +135,12 @@ The app requires and handles the following permissions:
 - Progress indicators
 - Custom dialogs
 - Rating interface
+- Bottom navigation
 
 ## Development Guidelines
 
 ### Code Style
-- Follow Java naming conventions
+- Follow Java/Kotlin naming conventions
 - Use camelCase for methods and variables
 - Use PascalCase for class names
 - Constants in ALL_CAPS
@@ -167,11 +151,13 @@ The app requires and handles the following permissions:
 - Follow MVVM architecture pattern
 - Implement proper lifecycle management
 - Use Firebase best practices for data structure
+- Handle configuration changes properly
 
 ### Testing
 - Unit tests with JUnit
 - Instrumented tests for Android components
 - UI testing with Espresso
+- Firebase Test Lab integration
 
 ## Firebase Structure
 
@@ -180,34 +166,40 @@ The app requires and handles the following permissions:
    - User profiles
    - Authentication data
    - Preferences
+   - Activity statistics
 
 2. allDonationItems
    - Food and non-food donations
    - Status tracking
    - Image references
+   - Donor information
 
-3. foodRequest
+3. foodRequest/nonFoodRequest
    - Food and non-food requests
    - Request status
    - User references
+   - Location data
 
 4. events
    - Community events
    - Volunteering opportunities
    - Campaign information
+   - Event status
 
 ## Future Enhancements
-1. Implement push notifications
-2. Add real-time chat functionality
-3. Enhance search and filtering capabilities
-4. Add analytics and reporting
-5. Implement multi-language support
-6. Add offline capabilities
-7. Enhance security measures
+1. Enhanced push notifications
+2. Real-time chat between users
+3. Advanced search and filtering
+4. Analytics dashboard
+5. Multi-language support
+6. Offline capabilities
+7. Enhanced security measures
+8. Social media integration
 
 ## Build and Deployment
 - Minimum SDK: 34
 - Target SDK: 34
-- Build using Gradle
+- Build using Gradle with Kotlin DSL
 - Firebase configuration required
+- Gemini API key required
 - ProGuard rules for release builds
