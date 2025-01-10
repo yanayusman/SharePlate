@@ -138,6 +138,14 @@
                 android:contentDescription="sign up with google"
                 android:background="@drawable/google_button" />
 
+            <ImageButton
+                android:id="@+id/facebookButton"
+                android:layout_width="@dimen/icon_size_large"
+                android:layout_height="@dimen/icon_size_large"
+                android:layout_marginStart="16dp"
+                android:contentDescription="sign up with facebook"
+                android:background="@drawable/facebook_button" />
+
         </LinearLayout>
 
         <TextView

@@ -60,6 +60,15 @@ import com.google.firebase.firestore.SetOptions;
 import java.util.Map;
 import java.util.HashMap;
 import com.google.firebase.auth.UserProfileChangeRequest;
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
+import com.google.firebase.auth.FacebookAuthProvider;
+
+import java.util.Arrays;
 
 public class SignupActivity extends AppCompatActivity {
     private static final String TAG = "SignupActivity";
@@ -75,6 +84,8 @@ public class SignupActivity extends AppCompatActivity {
     private Executor executor;
     private GoogleSignInClient mGoogleSignInClient;
     private static final int RC_SIGN_IN = 9001;
+    private ImageButton facebookButton;
+    private CallbackManager mCallbackManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +125,7 @@ public class SignupActivity extends AppCompatActivity {
         signupButton = findViewById(R.id.loginButton);
         cancelTextView = findViewById(R.id.cancelTextView);
         googleButton = findViewById(R.id.googleButton);
+        facebookButton = findViewById(R.id.facebookButton);
 
         signupButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -239,6 +251,38 @@ public class SignupActivity extends AppCompatActivity {
                 .requestEmail()
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+        // Initialize Facebook Login
+        mCallbackManager = CallbackManager.Factory.create();
+
+        // Initialize Facebook Login button
+        facebookButton.setOnClickListener(v -> {
+            LoginManager.getInstance().logInWithReadPermissions(SignupActivity.this,
+                    Arrays.asList("email", "public_profile"));
+        });
+
+        LoginManager.getInstance().registerCallback(mCallbackManager,
+                new FacebookCallback<LoginResult>() {
+                    @Override
+                    public void onSuccess(LoginResult loginResult) {
+                        Log.d(TAG, "facebook:onSuccess:" + loginResult);
+                        handleFacebookAccessToken(loginResult.getAccessToken());
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        Log.d(TAG, "facebook:onCancel");
+                        Toast.makeText(SignupActivity.this, "Facebook login cancelled",
+                                Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onError(FacebookException error) {
+                        Log.d(TAG, "facebook:onError", error);
+                        Toast.makeText(SignupActivity.this, "Facebook login failed",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void signInWithGoogle(GetCredentialRequest request) {
@@ -398,6 +442,42 @@ public class SignupActivity extends AppCompatActivity {
         Log.d(TAG, "Falling back to traditional Google Sign-In");
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         signInLauncher.launch(signInIntent);
+    }
+
+    private void handleFacebookAccessToken(AccessToken token) {
+        Log.d(TAG, "handleFacebookAccessToken:" + token);
+
+        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        // Sign in success
+                        Log.d(TAG, "signInWithCredential:success");
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        // Create user profile in Firestore
+                        createUserDocument(user);
+                        navigateToHome();
+                    } else {
+                        // If sign in fails, display a message to the user.
+                        Log.w(TAG, "signInWithCredential:failure", task.getException());
+                        Toast.makeText(SignupActivity.this, "Authentication failed.",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Pass the activity result back to the Facebook SDK
+        mCallbackManager.onActivityResult(requestCode, resultCode, data);
+        
+        // Handle Google Sign In Result (existing code)
+        if (requestCode == RC_SIGN_IN) {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
     }
 
     @Override

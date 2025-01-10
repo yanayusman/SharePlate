@@ -136,6 +136,14 @@
                 android:contentDescription="login with google"
                 android:background="@drawable/google_button" />
 
+            <ImageButton
+                android:id="@+id/facebookButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="16dp"
+                android:contentDescription="login with facebook"
+                android:background="@drawable/facebook_button" />
+
         </LinearLayout>
 
         <TextView
