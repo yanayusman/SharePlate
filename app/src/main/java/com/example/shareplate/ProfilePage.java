@@ -17,6 +17,7 @@ import android.net.Uri;
 import android.provider.MediaStore;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserInfo;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -69,12 +70,7 @@ public class ProfilePage extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mAuth = FirebaseAuth.getInstance();
-        currentUser = FirebaseAuth.getInstance().getCurrentUser();
         db = FirebaseFirestore.getInstance();
-        if (currentUser == null) {
-            Log.w(TAG, "No authenticated user found");
-        }
-        userEmail = currentUser.getEmail();
         storage = FirebaseStorage.getInstance();
         storageRef = storage.getReference();
 
@@ -99,163 +95,155 @@ public class ProfilePage extends Fragment {
 
         // Initialize views
         profileImage = view.findViewById(R.id.profile_image);
-        //usernameTextView = view.findViewById(R.id.username_text);
         profileUsername = view.findViewById(R.id.profile_username);
         signOutButton = view.findViewById(R.id.signOutButton);
         if (signOutButton == null) {
             Log.e(TAG, "onCreateView: signOutButton not found in layout");
-        } else {
-            Log.d(TAG, "onCreateView: signOutButton found and initialized");
-            signOutButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Log.d(TAG, "onClick: Sign out button clicked");
-                    signOut();
-                }
-            });
         }
 
         // Initialize SwipeRefreshLayout
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
-        swipeRefreshLayout.setOnRefreshListener(this::refreshProfile);
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setOnRefreshListener(this::refreshProfile);
+        }
 
-        // Set the colors for the refresh animation
-        swipeRefreshLayout.setColorSchemeResources(
-                R.color.button_green,  // Use your app's primary color
-                android.R.color.holo_green_light,
-                android.R.color.holo_orange_light,
-                android.R.color.holo_red_light
-        );
+        // Set up click listeners and other UI components
+        setupClickListeners(view);
 
-        // Load existing profile image if available
-            loadProfileImage();
-
-        // Initialize the view
-        editProfileButton = view.findViewById(R.id.editProfileButton);
-        rateAppButton = view.findViewById(R.id.rate_app_button);
-        termsConditionButton = view.findViewById(R.id.terms_conditions_button);
-        donatedCountTV = view.findViewById(R.id.donated_count);
-        requestedCountTV = view.findViewById(R.id.requested_count);
-        campaignsCountTV = view.findViewById(R.id.campaign_count);
-        volunteerCountTV = view.findViewById(R.id.volunteer_count);
-        notificationIV = view.findViewById(R.id.menu_icon2);
-        resetPass = view.findViewById(R.id.resetPassButton);
-
+        // Load user details
         fetchCurrentUserDetails();
-
-        setResetPassClickListener();
-
-        notificationIV.setOnClickListener(v -> {
-            requireActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, new NotificationAll())
-                    .addToBackStack(null)
-                    .commit();
-        });
-
-        editProfileButton.setOnClickListener(v -> {
-            requireActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, new EditProfile())
-                    .addToBackStack(null)
-                    .commit();
-        });
-
-        // Set click listener for Rate App button
-        rateAppButton.setOnClickListener(v -> {
-            // Show the rating dialog
-            RateUIPage rateUIPage = new RateUIPage(getActivity(), userEmail);
-            rateUIPage.getWindow().setBackgroundDrawable(new ColorDrawable(getResources().getColor(android.R.color.transparent)));
-            rateUIPage.setCancelable(false);
-            rateUIPage.show();
-        });
-
-        termsConditionButton.setOnClickListener(v -> {
-            String termsUrl = "https://sites.google.com/view/shareplate-terms-conditions";
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(termsUrl));
-            startActivity(browserIntent);
-        });
-
-        // Add click listeners in onViewCreated
-        View donatedSection = view.findViewById(R.id.food_donated);
-        View requestedSection = view.findViewById(R.id.food_requested);
-        View campaignSection = view.findViewById(R.id.campaign_volunteer);
-        View volunteerSection = view.findViewById(R.id.volunteer_section);
-
-        donatedSection.setOnClickListener(v -> openHistory("donated"));
-        requestedSection.setOnClickListener(v -> openHistory("requested"));
-        campaignSection.setOnClickListener(v -> openHistory("campaigns"));
-        volunteerSection.setOnClickListener(v -> openHistory("volunteering"));
 
         return view;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Register receivers
+        if (getActivity() != null) {
+            LocalBroadcastManager.getInstance(getActivity())
+                    .registerReceiver(profileUpdateReceiver, new IntentFilter("profile.image.updated"));
+            LocalBroadcastManager.getInstance(getActivity())
+                    .registerReceiver(usernameUpdateReceiver, new IntentFilter("profile.username.updated"));
+            LocalBroadcastManager.getInstance(getActivity())
+                    .registerReceiver(statsUpdateReceiver, new IntentFilter("profile.stats.updated"));
+        }
+        
+        // Refresh profile data
+        fetchCurrentUserDetails();
+    }
+
     private void fetchCurrentUserDetails() {
-        if (userEmail != null) {
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
+        currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
+            Log.w(TAG, "No authenticated user found");
+            if (profileUsername != null) {
+                profileUsername.setText("User not logged in");
+            }
+            return;
+        }
 
-            db.collection(COLLECTION_USER)
-                    .document(userEmail)
-                    .get()
-                    .addOnSuccessListener(document -> {
-                        if (document.exists()) {
-                            String username = document.getString("username");
+        // Get the user's email or Facebook ID
+        String documentId = null;
+        if (currentUser.getEmail() != null && !currentUser.getEmail().isEmpty()) {
+            documentId = currentUser.getEmail();
+        } else {
+            // Try to get Facebook ID from provider data
+            for (UserInfo profile : currentUser.getProviderData()) {
+                if (profile.getProviderId().equals("facebook.com")) {
+                    documentId = profile.getUid() + "@facebook.com";
+                    break;
+                }
+            }
+        }
+
+        if (documentId == null) {
+            Log.w(TAG, "Could not determine user document ID");
+            if (profileUsername != null) {
+                profileUsername.setText("User not logged in");
+            }
+            return;
+        }
+
+        final String userDocId = documentId;
+        db.collection(COLLECTION_USER)
+                .document(userDocId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document.exists()) {
+                        String username = document.getString("username");
+                        if (username == null || username.isEmpty()) {
+                            // If no username in Firestore, check if we have a display name from auth provider
+                            username = currentUser.getDisplayName();
                             if (username == null || username.isEmpty()) {
-                                username = userEmail.substring(0, userEmail.indexOf('@'));
-
-                                document.getReference().update("username", username)
+                                // If still no username, use email prefix or Facebook ID
+                                username = userDocId.substring(0, userDocId.indexOf('@'));
+                                // Update Firestore with this default username
+                                final String finalUsername = username;
+                                document.getReference().update("username", finalUsername)
                                         .addOnFailureListener(e -> {
-                                            Log.e("FirestoreError", "Error updating username", e);
+                                            Log.e(TAG, "Error updating default username", e);
                                         });
                             }
-
-                            // Add null checks before setting text
-//                            if (usernameTextView != null) {
-//                                usernameTextView.setText(username);
-//                            }
-                            if (profileUsername != null) {
-                                profileUsername.setText(username);
-                            }
-
-                            fetchDonatedCount(username);
-                            fetchRequestedCount(username);
-                            fetchCampaignsCount(username);
-                            fetchVolunteersCount(username);
-                        } else {
-                            // Create user document if it doesn't exist
-                            String defaultUsername = userEmail.substring(0, userEmail.indexOf('@'));
-                            Map<String, Object> userData = new HashMap<>();
-                            userData.put("email", userEmail);
-                            userData.put("username", defaultUsername);
-                            userData.put("location", "");
-                            userData.put("phoneNumber", "");
-                            userData.put("profileImage", "");
-
-                            db.collection(COLLECTION_USER)
-                                    .document(userEmail)
-                                    .set(userData)
-                                    .addOnSuccessListener(aVoid -> {
-                                        // Add null checks before setting text
-//                                        if (usernameTextView != null) {
-//                                            usernameTextView.setText(defaultUsername);
-//                                        }
-                                        if (profileUsername != null) {
-                                            profileUsername.setText(defaultUsername);
-                                        }
-                                        fetchDonatedCount(defaultUsername);
-                                        fetchRequestedCount(defaultUsername);
-                                        fetchCampaignsCount(defaultUsername);
-                                        fetchVolunteersCount(defaultUsername);
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        Log.e("FirestoreError", "Error creating user document", e);
-                                    });
                         }
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e("FirestoreError", "Error fetching username", e);
-                    });
-        }
+                        
+                        // Update the UI with the username
+                        final String displayUsername = username;
+                        if (profileUsername != null) {
+                            profileUsername.setText(displayUsername);
+                        }
+
+                        // Load profile image
+                        loadProfileImage();
+
+                        // Fetch counts
+                        fetchDonatedCount(displayUsername);
+                        fetchRequestedCount(displayUsername);
+                        fetchCampaignsCount(displayUsername);
+                        fetchVolunteersCount(displayUsername);
+                    } else {
+                        // Create a new user document if it doesn't exist
+                        final String defaultUsername;
+                        String tempUsername = currentUser.getDisplayName();
+                        if (tempUsername == null || tempUsername.isEmpty()) {
+                            tempUsername = userDocId.substring(0, userDocId.indexOf('@'));
+                        }
+                        defaultUsername = tempUsername;
+                        
+                        Map<String, Object> userData = new HashMap<>();
+                        userData.put("email", userDocId);
+                        userData.put("username", defaultUsername);
+                        userData.put("location", "");
+                        userData.put("phoneNumber", "");
+
+                        db.collection(COLLECTION_USER)
+                                .document(userDocId)
+                                .set(userData)
+                                .addOnSuccessListener(aVoid -> {
+                                    Log.d(TAG, "User document created successfully");
+                                    if (profileUsername != null) {
+                                        profileUsername.setText(defaultUsername);
+                                    }
+                                    // Fetch counts after creating the document
+                                    fetchDonatedCount(defaultUsername);
+                                    fetchRequestedCount(defaultUsername);
+                                    fetchCampaignsCount(defaultUsername);
+                                    fetchVolunteersCount(defaultUsername);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error creating user document", e);
+                                    if (profileUsername != null) {
+                                        profileUsername.setText(userDocId.substring(0, userDocId.indexOf('@')));
+                                    }
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching user details", e);
+                    if (profileUsername != null) {
+                        profileUsername.setText(userDocId.substring(0, userDocId.indexOf('@')));
+                    }
+                });
     }
 
     // Add a new method to handle username updates
@@ -283,33 +271,6 @@ public class ProfilePage extends Fragment {
         }
     };
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Register both receivers
-        if (getActivity() != null) {
-            LocalBroadcastManager.getInstance(getActivity())
-                    .registerReceiver(profileUpdateReceiver, new IntentFilter("profile.image.updated"));
-            LocalBroadcastManager.getInstance(getActivity())
-                    .registerReceiver(usernameUpdateReceiver, new IntentFilter("profile.username.updated"));
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        // Unregister both receivers
-        if (getActivity() != null) {
-            LocalBroadcastManager.getInstance(getActivity())
-                    .unregisterReceiver(profileUpdateReceiver);
-            LocalBroadcastManager.getInstance(getActivity())
-                    .unregisterReceiver(usernameUpdateReceiver);
-        }
-    }
-
-                            /**
-                             * Set a click listener for the "Reset Password" button.
-                             */
     private void setResetPassClickListener() {
         resetPass.setOnClickListener(v -> getParentFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, new ResetPasswordFragment())
@@ -318,12 +279,12 @@ public class ProfilePage extends Fragment {
     }
 
     private void fetchDonatedCount(String username) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        FirebaseUser currUser = FirebaseAuth.getInstance().getCurrentUser();
+        FirebaseUser currUser = mAuth.getCurrentUser();
+        if (currUser == null) return;
 
         // Query the donations collection where donorUsername matches
         db.collection(COLLECTION_DONATE)
-                .whereEqualTo("email", currUser.getEmail())
+                .whereEqualTo("email", getDocumentId())
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
@@ -335,23 +296,31 @@ public class ProfilePage extends Fragment {
                         }
 
                         // Update the TextView
-                        donatedCountTV.setText(String.valueOf(donatedCountValue));
+                        if (donatedCountTV != null) {
+                            donatedCountTV.setText(String.valueOf(donatedCountValue));
+                        }
                     } else {
                         // No donations found
-                        donatedCountTV.setText("0");
+                        if (donatedCountTV != null) {
+                            donatedCountTV.setText("0");
+                        }
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("FirestoreError", "Error fetching donated items count", e);
+                    Log.e(TAG, "Error fetching donated items count", e);
+                    if (donatedCountTV != null) {
+                        donatedCountTV.setText("0");
+                    }
                 });
     }
 
     private void fetchRequestedCount(String username) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        FirebaseUser currUser = mAuth.getCurrentUser();
+        if (currUser == null) return;
 
         // Query the donations collection where donorUsername matches
         db.collection(COLLECTION_REQUEST)
-                .whereEqualTo("email", currentUser.getEmail())
+                .whereEqualTo("email", getDocumentId())
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
@@ -363,23 +332,37 @@ public class ProfilePage extends Fragment {
                         }
 
                         // Update the TextView
-                        requestedCountTV.setText(String.valueOf(requestedCountValue));
+                        if (requestedCountTV != null) {
+                            requestedCountTV.setText(String.valueOf(requestedCountValue));
+                        }
                     } else {
                         // No donations found
-                        requestedCountTV.setText("0");
+                        if (requestedCountTV != null) {
+                            requestedCountTV.setText("0");
+                        }
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("FirestoreError", "Error fetching requested items count", e);
+                    Log.e(TAG, "Error fetching requested items count", e);
+                    if (requestedCountTV != null) {
+                        requestedCountTV.setText("0");
+                    }
                 });
     }
 
     private void fetchCampaignsCount(String username) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String documentId = getDocumentId();
+        if (documentId == null) {
+            Log.e(TAG, "Cannot fetch campaigns count: document ID is null");
+            if (campaignsCountTV != null) {
+                campaignsCountTV.setText("0");
+            }
+            return;
+        }
 
         // Query the donations collection where donorUsername matches
         db.collection(COLLECTION_USER)
-                .document(userEmail)
+                .document(documentId)
                 .collection(SUBCOLLECTION_USER)
                 .whereEqualTo("eventType", "Campaigns")
                 .get()
@@ -393,23 +376,37 @@ public class ProfilePage extends Fragment {
                         }
 
                         // Update the TextView
-                        campaignsCountTV.setText(String.valueOf(campaignsCountValue));
+                        if (campaignsCountTV != null) {
+                            campaignsCountTV.setText(String.valueOf(campaignsCountValue));
+                        }
                     } else {
                         // No donations found
-                        campaignsCountTV.setText("0");
+                        if (campaignsCountTV != null) {
+                            campaignsCountTV.setText("0");
+                        }
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("FirestoreError", "Error fetching campaigns items count", e);
+                    Log.e(TAG, "Error fetching campaigns items count", e);
+                    if (campaignsCountTV != null) {
+                        campaignsCountTV.setText("0");
+                    }
                 });
     }
 
     private void fetchVolunteersCount(String username) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String documentId = getDocumentId();
+        if (documentId == null) {
+            Log.e(TAG, "Cannot fetch volunteers count: document ID is null");
+            if (volunteerCountTV != null) {
+                volunteerCountTV.setText("0");
+            }
+            return;
+        }
 
         // Query the donations collection where donorUsername matches
         db.collection(COLLECTION_USER)
-                .document(userEmail)
+                .document(documentId)
                 .collection(SUBCOLLECTION_USER)
                 .whereEqualTo("eventType", "Volunteering")
                 .get()
@@ -423,15 +420,40 @@ public class ProfilePage extends Fragment {
                         }
 
                         // Update the TextView
-                        volunteerCountTV.setText(String.valueOf(volunteersCountValue));
+                        if (volunteerCountTV != null) {
+                            volunteerCountTV.setText(String.valueOf(volunteersCountValue));
+                        }
                     } else {
                         // No donations found
-                        volunteerCountTV.setText("0");
+                        if (volunteerCountTV != null) {
+                            volunteerCountTV.setText("0");
+                        }
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("FirestoreError", "Error fetching campaigns items count", e);
+                    Log.e(TAG, "Error fetching campaigns items count", e);
+                    if (volunteerCountTV != null) {
+                        volunteerCountTV.setText("0");
+                    }
                 });
+    }
+
+    private String getDocumentId() {
+        if (currentUser == null) return null;
+
+        // Get the user's email or Facebook ID
+        if (currentUser.getEmail() != null && !currentUser.getEmail().isEmpty()) {
+            return currentUser.getEmail();
+        }
+
+        // Try to get Facebook ID from provider data
+        for (UserInfo profile : currentUser.getProviderData()) {
+            if (profile.getProviderId().equals("facebook.com")) {
+                return profile.getUid() + "@facebook.com";
+            }
+        }
+
+        return null;
     }
 
     private void signOut() {
@@ -586,72 +608,6 @@ public class ProfilePage extends Fragment {
         }
     }
 
-//    private void loadProfileImage(String userId) {
-//        FirebaseUser currentUser = mAuth.getCurrentUser();
-//
-//        if (currentUser == null) return;
-//
-//        // Use a single Glide request builder for all cases
-//        RequestBuilder<Drawable> glideRequest = Glide.with(this)
-//                .load(R.drawable.profile) // Default placeholder
-//                .circleCrop()
-//                .diskCacheStrategy(DiskCacheStrategy.ALL) // Enable disk caching
-//                .skipMemoryCache(false); // Enable memory caching
-//
-//        // Try loading from SharedPreferences first
-//        String savedProfileImageUrl = getContext() != null ?
-//                getContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-//                        .getString("default_profile_image", null) : null;
-//
-//        if (savedProfileImageUrl != null) {
-//            glideRequest.load(savedProfileImageUrl)
-//                    .into(profileImage);
-//
-//            // Store in Firestore if not already present
-//            storeProfileImageInFirestore(savedProfileImageUrl);
-//            return;
-//        }
-//
-//        // Then try Firebase Auth
-//        if (currentUser.getPhotoUrl() != null) {
-//            String authPhotoUrl = currentUser.getPhotoUrl().toString();
-//            glideRequest.load(authPhotoUrl)
-//                    .into(profileImage);
-//
-//            // Store in Firestore if not already present
-//            storeProfileImageInFirestore(authPhotoUrl);
-//            return;
-//        }
-//
-//        // Fallback to Firebase Storage if no other source is available
-//        StorageReference imageRef = storageRef.child("profile_images/" + userId + ".jpg");
-//
-//        imageRef.getDownloadUrl()
-//                .addOnSuccessListener(uri -> {
-//                    if (getContext() != null && profileImage != null) {
-//                        String downloadUrl = uri.toString();
-//
-//                        // Save the URL to SharedPreferences for faster future loads
-//                        getContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-//                                .edit()
-//                                .putString("default_profile_image", downloadUrl)
-//                                .apply();
-//
-//                        glideRequest.load(downloadUrl)
-//                                .into(profileImage);
-//
-//                        // Store in Firestore
-//                        storeProfileImageInFirestore(downloadUrl);
-//                    }
-//                })
-//                .addOnFailureListener(e -> {
-//                    Log.d(TAG, "No profile image found for user: " + userId);
-//                    if (getContext() != null && profileImage != null) {
-//                        glideRequest.into(profileImage);
-//                    }
-//                });
-//    }
-
     private void loadProfileImage() {
         if (currentUser == null) {
             Log.w("ProfilePage", "No user logged in.");
@@ -717,31 +673,6 @@ public class ProfilePage extends Fragment {
                 .addOnSuccessListener(aVoid -> Log.d(TAG, "Profile image URL stored in Firestore"))
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to store profile image URL in Firestore", e));
     }
-
-
-//    private void refreshProfile() {
-//        FirebaseUser currentUser = mAuth.getCurrentUser();
-//        if (currentUser != null) {
-//            // Refresh user data
-////            email.setText("Email: " + currentUser.getEmail());
-//
-//            String displayName = currentUser.getDisplayName();
-////            username.setText(displayName != null && !displayName.isEmpty() ?
-////                    displayName : currentUser.getEmail());
-//
-//            // Reload profile image
-//            loadProfileImage(currentUser.getUid());
-//
-//            // Optional: Refresh any other user data you want to update
-//
-//            // End the refreshing animation
-//            swipeRefreshLayout.setRefreshing(false);
-//        } else {
-//            swipeRefreshLayout.setRefreshing(false);
-//            // Handle the case where user is not logged in
-//            Toast.makeText(getContext(), "Please log in to refresh profile", Toast.LENGTH_SHORT).show();
-//        }
-//    }
 
     private void updateDonationsProfileImage(String newProfileImageUrl, String ownerUsername) {
         // Get reference to Firestore
@@ -830,6 +761,89 @@ public class ProfilePage extends Fragment {
                 .replace(R.id.fragment_container, historyFragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    private void setupClickListeners(View view) {
+        // Set up sign out button
+        if (signOutButton != null) {
+            signOutButton.setOnClickListener(v -> signOut());
+        }
+
+        // Set up SwipeRefreshLayout colors
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setColorSchemeResources(
+                R.color.button_green,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light
+            );
+        }
+
+        // Initialize other views
+        editProfileButton = view.findViewById(R.id.editProfileButton);
+        rateAppButton = view.findViewById(R.id.rate_app_button);
+        termsConditionButton = view.findViewById(R.id.terms_conditions_button);
+        donatedCountTV = view.findViewById(R.id.donated_count);
+        requestedCountTV = view.findViewById(R.id.requested_count);
+        campaignsCountTV = view.findViewById(R.id.campaign_count);
+        volunteerCountTV = view.findViewById(R.id.volunteer_count);
+        notificationIV = view.findViewById(R.id.menu_icon2);
+        resetPass = view.findViewById(R.id.resetPassButton);
+
+        // Set up reset password
+        setResetPassClickListener();
+
+        // Set up notification click
+        if (notificationIV != null) {
+            notificationIV.setOnClickListener(v -> {
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, new NotificationAll())
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
+
+        // Set up edit profile click
+        if (editProfileButton != null) {
+            editProfileButton.setOnClickListener(v -> {
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, new EditProfile())
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
+
+        // Set up rate app click
+        if (rateAppButton != null) {
+            rateAppButton.setOnClickListener(v -> {
+                RateUIPage rateUIPage = new RateUIPage(getActivity(), userEmail);
+                rateUIPage.getWindow().setBackgroundDrawable(new ColorDrawable(getResources().getColor(android.R.color.transparent)));
+                rateUIPage.setCancelable(false);
+                rateUIPage.show();
+            });
+        }
+
+        // Set up terms and conditions click
+        if (termsConditionButton != null) {
+            termsConditionButton.setOnClickListener(v -> {
+                String termsUrl = "https://sites.google.com/view/shareplate-terms-conditions";
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(termsUrl));
+                startActivity(browserIntent);
+            });
+        }
+
+        // Set up history section clicks
+        View donatedSection = view.findViewById(R.id.food_donated);
+        View requestedSection = view.findViewById(R.id.food_requested);
+        View campaignSection = view.findViewById(R.id.campaign_volunteer);
+        View volunteerSection = view.findViewById(R.id.volunteer_section);
+
+        if (donatedSection != null) donatedSection.setOnClickListener(v -> openHistory("donated"));
+        if (requestedSection != null) requestedSection.setOnClickListener(v -> openHistory("requested"));
+        if (campaignSection != null) campaignSection.setOnClickListener(v -> openHistory("campaigns"));
+        if (volunteerSection != null) volunteerSection.setOnClickListener(v -> openHistory("volunteering"));
     }
 
 }

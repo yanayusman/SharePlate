@@ -31,6 +31,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserInfo;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -42,6 +44,7 @@ import java.util.Locale;
 import java.util.Map;
 
 public class EditProfile extends Fragment {
+    private static final String TAG = "EditProfile";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
 
     private EditText usernameEditText;
@@ -55,6 +58,7 @@ public class EditProfile extends Fragment {
 
     private String userEmail;
     private FirebaseFirestore db;
+    private FirebaseAuth mAuth;
     private StorageReference storageRef;
     private LocationHelper locationHelper;
     private ActivityResultLauncher<String> imagePickerLauncher;
@@ -65,8 +69,12 @@ public class EditProfile extends Fragment {
 
         // Initialize Firebase
         db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
         storageRef = FirebaseStorage.getInstance().getReference();
-        userEmail = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            userEmail = currentUser.getEmail();
+        }
 
         // Initialize views
         initializeViews(view);
@@ -244,127 +252,78 @@ public class EditProfile extends Fragment {
     }
 
     private void loadUserProfile() {
-        if (userEmail == null) return;
+        String documentId = getDocumentId();
+        if (documentId == null) {
+            Toast.makeText(requireContext(), "Error: Could not determine user ID", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        db.collection("users").document(userEmail)
+        db.collection("users")
+                .document(documentId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        // Populate fields with data from Firestore
                         String username = documentSnapshot.getString("username");
-                        String phoneNumber = documentSnapshot.getString("phoneNumber");
                         String location = documentSnapshot.getString("location");
-                        String profileImageUrl = documentSnapshot.getString("profileImage");
+                        String phoneNumber = documentSnapshot.getString("phoneNumber");
 
-                        usernameEditText.setText(username != null ? username : "");
-                        emailEditText.setText(userEmail); // Always show the current user's email
-                        phoneNumberEditText.setText(phoneNumber != null ? phoneNumber : "");
-                        locationDisplay.setText(location != null ? location : "");
-
-                        // Load profile image using Glide
-                        if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
-                            Glide.with(this)
-                                    .load(profileImageUrl)
-                                    .circleCrop()
-                                    .placeholder(R.drawable.profile)
-                                    .into(profileImage);
-                        } else {
-                            // Use default profile image
-                            profileImage.setImageResource(R.drawable.profile);
-                        }
-                    } else {
-                        Toast.makeText(getContext(), "No profile data found. Please update your details.", Toast.LENGTH_SHORT).show();
+                        // Set the values to EditText fields
+                        if (username != null) usernameEditText.setText(username);
+                        if (location != null) locationDisplay.setText(location);
+                        if (phoneNumber != null) phoneNumberEditText.setText(phoneNumber);
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Failed to load user details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Error loading user profile", e);
+                    Toast.makeText(requireContext(), "Error loading profile", Toast.LENGTH_SHORT).show();
                 });
     }
 
     private void updateUserProfile() {
-        // Show loading spinner
-        if (loadingSpinner != null) {
-            loadingSpinner.setVisibility(View.VISIBLE);
-        }
-
-        // Retrieve updated data
-        String username = usernameEditText.getText().toString().trim();
-        String phoneNumber = phoneNumberEditText.getText().toString().trim();
-        String location = locationDisplay.getText().toString().trim();
-
-        // Validate input fields
-        if (username.isEmpty()) {
-            usernameEditText.setError("Username cannot be empty");
-            if (loadingSpinner != null) {
-                loadingSpinner.setVisibility(View.GONE);
-            }
+        String documentId = getDocumentId();
+        if (documentId == null) {
+            Toast.makeText(requireContext(), "Error: Could not determine user ID", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Prepare updates for Firestore
+        // Get the values from EditText fields
+        String newUsername = usernameEditText.getText().toString().trim();
+        String newLocation = locationDisplay.getText().toString().trim();
+        String newPhoneNumber = phoneNumberEditText.getText().toString().trim();
+
+        // Validate the input
+        if (newUsername.isEmpty()) {
+            usernameEditText.setError("Username cannot be empty");
+            return;
+        }
+
+        // Create a map of the fields to update
         Map<String, Object> updates = new HashMap<>();
-        updates.put("username", username);
-        updates.put("phoneNumber", phoneNumber);
-        updates.put("location", location);
+        updates.put("username", newUsername);
+        updates.put("location", newLocation);
+        updates.put("phoneNumber", newPhoneNumber);
 
-        // Update Firestore
-        db.collection("users").document(userEmail)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        // Update existing document
-                        db.collection("users").document(userEmail)
-                                .update(updates)
-                                .addOnSuccessListener(aVoid -> {
-                                    // Broadcast username update
-                                    Intent usernameIntent = new Intent("profile.username.updated");
-                                    usernameIntent.putExtra("newUsername", username);
-                                    LocalBroadcastManager.getInstance(requireContext())
-                                            .sendBroadcast(usernameIntent);
+        // Update the document in Firestore
+        db.collection("users")
+                .document(documentId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Profile updated successfully");
+                    Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show();
 
-                                    Toast.makeText(getContext(), "Profile updated successfully!", Toast.LENGTH_SHORT).show();
-                                    if (loadingSpinner != null) {
-                                        loadingSpinner.setVisibility(View.GONE);
-                                    }
-                                    requireActivity().getSupportFragmentManager().popBackStack();
-                                })
-                                .addOnFailureListener(e -> {
-                                    Toast.makeText(getContext(), "Failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                    if (loadingSpinner != null) {
-                                        loadingSpinner.setVisibility(View.GONE);
-                                    }
-                                });
-                    } else {
-                        // Create new document
-                        updates.put("email", userEmail);
-                        db.collection("users").document(userEmail)
-                                .set(updates)
-                                .addOnSuccessListener(aVoid -> {
-                                    // Broadcast username update
-                                    Intent usernameIntent = new Intent("profile.username.updated");
-                                    usernameIntent.putExtra("newUsername", username);
-                                    LocalBroadcastManager.getInstance(requireContext())
-                                            .sendBroadcast(usernameIntent);
+                    // Broadcast the username update
+                    Intent intent = new Intent("profile.username.updated");
+                    intent.putExtra("newUsername", newUsername);
+                    LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(intent);
 
-                                    Toast.makeText(getContext(), "Profile created successfully!", Toast.LENGTH_SHORT).show();
-                                    if (loadingSpinner != null) {
-                                        loadingSpinner.setVisibility(View.GONE);
-                                    }
-                                    requireActivity().getSupportFragmentManager().popBackStack();
-                                })
-                                .addOnFailureListener(e -> {
-                                    Toast.makeText(getContext(), "Failed to create profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                    if (loadingSpinner != null) {
-                                        loadingSpinner.setVisibility(View.GONE);
-                                    }
-                                });
+                    // Return to the previous screen
+                    if (getActivity() != null) {
+                        getActivity().getSupportFragmentManager().popBackStack();
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Failed to fetch user details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    if (loadingSpinner != null) {
-                        loadingSpinner.setVisibility(View.GONE);
-                    }
+                    Log.e(TAG, "Error updating profile", e);
+                    Toast.makeText(requireContext(), "Error updating profile", Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -455,5 +414,24 @@ public class EditProfile extends Fragment {
         if (locationHelper != null) {
             locationHelper.stopLocationUpdates();
         }
+    }
+
+    private String getDocumentId() {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) return null;
+
+        // Get the user's email or Facebook ID
+        if (currentUser.getEmail() != null && !currentUser.getEmail().isEmpty()) {
+            return currentUser.getEmail();
+        }
+
+        // Try to get Facebook ID from provider data
+        for (UserInfo profile : currentUser.getProviderData()) {
+            if (profile.getProviderId().equals("facebook.com")) {
+                return profile.getUid() + "@facebook.com";
+            }
+        }
+
+        return null;
     }
 }
