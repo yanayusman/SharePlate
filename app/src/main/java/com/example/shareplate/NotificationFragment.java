@@ -32,13 +32,8 @@ import java.util.List;
 
 public class NotificationFragment extends Fragment {
     private static final String ARG_NOTIFICATION = "notification";
-    private BroadcastReceiver profileUpdateReceiver;
-    private SwipeRefreshLayout swipeRefreshLayout;
     private Notification notification;
     private RecyclerView detailRecyclerView;
-    private RecyclerView notificationRecyclerView;
-    private NotificationAdapter notificationAdapter;
-    private List<Notification> notificationList;
 
     public static NotificationFragment newInstance(Notification item) {
         NotificationFragment fragment = new NotificationFragment();
@@ -122,22 +117,62 @@ public class NotificationFragment extends Fragment {
                     .commit();
         });
 
-        // Load item image
-        if (notification.getImgUrl() != null && !notification.getImgUrl().isEmpty()) {
-            Glide.with(this)
-                    .load(notification.getImgUrl())
-                    .placeholder(R.drawable.placeholder_image)
-                    .error(R.drawable.placeholder_image)
-                    .centerCrop()
-                    .into(notiImg);
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserEmail = currentUser.getEmail();
+
+        if (currentUserEmail.equals(notification.getRequesterEmail())) {
+            Log.d("Activity!!!!!", "Activity Type : " + notification.getActivityType());
+
+            if ("event".equals(notification.getActivityType())) {
+                if (notification.getImgUrl() != null && !notification.getImgUrl().isEmpty()) {
+                    Glide.with(this)
+                            .load(notification.getImgUrl())
+                            .placeholder(R.drawable.placeholder_image)
+                            .error(R.drawable.placeholder_image)
+                            .centerCrop()
+                            .into(notiImg);
+                } else {
+                    notiImg.setImageResource(0);
+                }
+
+                notiTitle.setText("\tREMINDER!!\n" + notification.getTitle());
+                notiTimestamp.setText("Date and Time : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                notiLocation.setText("Location : " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                notiMessage.setText("Dont forget Your Upcoming Event!!");
+            } else {
+                if (notification.getImgUrl() != null && !notification.getImgUrl().isEmpty()) {
+                    Glide.with(this)
+                            .load(notification.getImgUrl())
+                            .placeholder(R.drawable.placeholder_image)
+                            .error(R.drawable.placeholder_image)
+                            .centerCrop()
+                            .into(notiImg);
+                } else {
+                    notiImg.setImageResource(0);
+                }
+
+                notiTitle.setText(notification.getTitle());
+                notiTimestamp.setText("Posted on : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                notiLocation.setText("Location : " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                notiMessage.setText("Description : " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+            }
+
         } else {
-            notiImg.setImageResource(0);
+            if (notification.getImgUrl() != null && !notification.getImgUrl().isEmpty()) {
+                Glide.with(this)
+                        .load(notification.getImgUrl())
+                        .placeholder(R.drawable.placeholder_image)
+                        .error(R.drawable.placeholder_image)
+                        .centerCrop()
+                        .into(notiImg);
+            } else {
+                notiImg.setImageResource(0);
+            }
+
+            notiTitle.setText(notification.getTitle());
+            notiTimestamp.setText("Posted on : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+            notiLocation.setText("Location : " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+            notiMessage.setText("Description : " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
         }
-
-        notiTitle.setText(notification.getTitle());
-        notiTimestamp.setText("Posted on : " + (notification.getTimestamp()));
-        notiMessage.setText(notification.getMessage());
-        notiLocation.setText("Location: " +(notification.getLocation()));
-
     }
 }

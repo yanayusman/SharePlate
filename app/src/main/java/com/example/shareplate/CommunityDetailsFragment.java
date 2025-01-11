@@ -240,6 +240,7 @@ public class CommunityDetailsFragment extends Fragment {
                     notificationData.put("timestamp", System.currentTimeMillis());
                     notificationData.put("status", "unread");
                     notificationData.put("message", requesterEmail + " has joined your event!");
+                    notificationData.put("activityType", "event");
 
                     db.collection("notifications")
                             .add(notificationData)

@@ -8,10 +8,10 @@ import java.time.format.DateTimeFormatter;
 // This class represents a single notification item.
 // It stores the data for each notification, such as the title, message, timestamp, and an icon resource ID.
 public class Notification implements Serializable {
-    private String title, message, location, imgUrl, ownerEmail, requesterEmail;
+    private String title, message, location, imgUrl, ownerEmail, requesterEmail, activityType;
     private long timestamp;
     // Constructor
-    public Notification(String title, String message, long timestamp, String location, String imgUrl, String ownerEmail, String requesterEmail) {
+    public Notification(String title, String message, long timestamp, String location, String imgUrl, String ownerEmail, String requesterEmail, String activityType) {
         this.title = title;
         this.message = message;
         this.timestamp = timestamp;
@@ -19,6 +19,7 @@ public class Notification implements Serializable {
         this.imgUrl = imgUrl;
         this.ownerEmail = ownerEmail;
         this.requesterEmail = requesterEmail;
+        this.activityType = activityType;
     }
     // Getters
     public String getTitle() {
@@ -45,5 +46,9 @@ public class Notification implements Serializable {
     }
     public String getRequesterEmail(){
         return requesterEmail;
+    }
+
+    public String getActivityType(){
+        return activityType;
     }
 }

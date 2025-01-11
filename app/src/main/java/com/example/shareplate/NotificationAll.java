@@ -24,6 +24,7 @@ import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.google.android.material.chip.Chip;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -73,7 +74,7 @@ public class NotificationAll extends Fragment {
             public void onNotificationLoaded(List<Notification> items) {
                 if (isAdded() && getView() != null) {
                     for (Notification item : items) {
-                        addNotificationView(item); // Add items to the UI
+                        addNotificationView(item);
                     }
                 } else {
                     Log.e("NotificationAll", "Fragment not attached, skipping UI update.");
@@ -108,22 +109,61 @@ public class NotificationAll extends Fragment {
             notificationImg.setImageResource(0);
         }
 
-        notificationTitle.setText(notification.getTitle());
-        notificationDate.setText("Posted on : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
-        notificationLocation.setText("Location : " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-        notificationMessage.setText("Description : " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserEmail = currentUser.getEmail();
 
-        eventItem.setOnClickListener(v -> {
-            NotificationFragment detailFragment = NotificationFragment.newInstance(notification);
+        if (currentUserEmail.equals(notification.getRequesterEmail())) {
+            Log.d("Activity!!!!!", "Activity Type : " + notification.getActivityType());
 
-            // Navigate to the NotificationDetailFragment
-            requireActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, detailFragment)
-                    .addToBackStack(null)
-                    .commit();
-        });
+            if ("event".equals(notification.getActivityType())) {
+                notificationTitle.setText("[Reminder] Your Upcoming Event!! " + notification.getTitle());
+                notificationDate.setText("Posted on : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                notificationLocation.setText("Location : " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                notificationMessage.setVisibility(View.GONE);
 
+                eventItem.setOnClickListener(v -> {
+                    NotificationFragment detailFragment = NotificationFragment.newInstance(notification);
+                    requireActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, detailFragment)
+                            .addToBackStack(null)
+                            .commit();
+                });
+            } else {
+                notificationTitle.setText(notification.getTitle());
+                notificationDate.setText("Posted on : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                notificationLocation.setText("Location : " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                notificationMessage.setText("Description : " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+
+                eventItem.setOnClickListener(v -> {
+                    NotificationFragment detailFragment = NotificationFragment.newInstance(notification);
+                    requireActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, detailFragment)
+                            .addToBackStack(null)
+                            .commit();
+                });
+            }
+
+        } else {
+            notificationTitle.setText(notification.getTitle());
+            notificationDate.setText("Posted on : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+            notificationLocation.setText("Location : " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+            notificationMessage.setText("Description : " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+
+            eventItem.setOnClickListener(v -> {
+                NotificationFragment detailFragment = NotificationFragment.newInstance(notification);
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, detailFragment)
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
+
+        if (eventItem.getParent() != null) {
+            ((ViewGroup) eventItem.getParent()).removeView(eventItem);
+        }
         eventGrid.addView(eventItem);
     }
 }

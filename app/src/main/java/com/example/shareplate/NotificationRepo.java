@@ -34,6 +34,7 @@ public class NotificationRepo {
     public void getAllNotification(NotificationRepo.OnNotificationLoadedListener listener) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         String currentUserEmail = currentUser.getEmail();
+
         db.collection(COLLECTION_NAME)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
@@ -47,10 +48,13 @@ public class NotificationRepo {
                             String imgUrl = document.getString("imageUrl");
                             String ownerEmail = document.getString("ownerEmail");
                             String requesterEmail = document.getString("requesterEmail");
+                            String activityType = document.getString("activityType");
 
-                            if (currentUserEmail != null && currentUserEmail.equals(ownerEmail)) {
+                            // Add notifications for both owner and requester
+                            if (currentUserEmail != null &&
+                                    (currentUserEmail.equals(ownerEmail) || currentUserEmail.equals(requesterEmail))) {
                                 if (title != null && !title.isEmpty()) {
-                                    Notification item = new Notification(title, message, timestamp, location, imgUrl, ownerEmail, requesterEmail);
+                                    Notification item = new Notification(title, message, timestamp, location, imgUrl, ownerEmail, requesterEmail, activityType);
                                     items.add(item);
                                 }
                             }
@@ -62,4 +66,5 @@ public class NotificationRepo {
                 })
                 .addOnFailureListener(listener::onError);
     }
+
 }
