@@ -818,10 +818,15 @@ public class ProfilePage extends Fragment {
         // Set up rate app click
         if (rateAppButton != null) {
             rateAppButton.setOnClickListener(v -> {
-                RateUIPage rateUIPage = new RateUIPage(getActivity(), userEmail);
-                rateUIPage.getWindow().setBackgroundDrawable(new ColorDrawable(getResources().getColor(android.R.color.transparent)));
-                rateUIPage.setCancelable(false);
-                rateUIPage.show();
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                if (currentUser != null && currentUser.getEmail() != null) {
+                    RateUIPage rateUIPage = new RateUIPage(getActivity(), currentUser.getEmail());
+                    rateUIPage.getWindow().setBackgroundDrawable(new ColorDrawable(getResources().getColor(android.R.color.transparent)));
+                    rateUIPage.setCancelable(false);
+                    rateUIPage.show();
+                } else {
+                    Toast.makeText(getContext(), "Please sign in to rate", Toast.LENGTH_SHORT).show();
+                }
             });
         }
 
