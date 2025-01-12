@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,7 +43,9 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class HostActivityFragment extends Fragment {
     protected EditText eventNameInput, eventDescriptionInput, eventTimeInput, eventDateInput, eventLocationInput, eventSeatsAvailableInput;
@@ -278,6 +281,60 @@ public class HostActivityFragment extends Fragment {
                                 if (getContext() != null) {
                                     newEvent.setDocumentId(newEvent.getDocumentId());
                                     Toast.makeText(getContext(), "Event added successfully", Toast.LENGTH_SHORT).show();
+                                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                                    // Fetch the username from the users collection
+                                    db.collection("users")
+                                            .whereEqualTo("email", currentUserEmail)
+                                            .get()
+                                            .addOnSuccessListener(querySnapshot -> {
+                                                String ownersUsername = "Unknown User";
+                                                if (!querySnapshot.isEmpty()) {
+                                                    ownersUsername = querySnapshot.getDocuments().get(0).getString("username");
+                                                }
+
+                                                Map<String, Object> notificationData = new HashMap<>();
+                                                notificationData.put("ownerEmail", currentUserEmail);
+                                                notificationData.put("itemName", name);
+                                                notificationData.put("location", location);
+                                                notificationData.put("imageUrl", imageUrl);
+                                                notificationData.put("expiredDate", date);
+                                                notificationData.put("status", "unread");
+                                                notificationData.put("message", ownersUsername + " has a new event!");
+                                                notificationData.put("activityType", "event");
+
+                                                db.collection("notifications")
+                                                        .add(notificationData)
+                                                        .addOnSuccessListener(documentReference -> {
+                                                            Log.d("Notification", "Notification stored successfully");
+                                                        })
+                                                        .addOnFailureListener(e -> {
+                                                            Log.e("NotificationError", "Failed to store notification: " + e.getMessage());
+                                                        });
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                Log.e("UserQueryError", "Failed to fetch requester username: " + e.getMessage());
+
+                                                // Fallback: Store notification with requester email if username fetch fails
+                                                Map<String, Object> notificationData = new HashMap<>();
+                                                notificationData.put("ownerEmail", currentUserEmail);
+                                                notificationData.put("itemName", name);
+                                                notificationData.put("location", location);
+                                                notificationData.put("imageUrl", imageUrl);
+                                                notificationData.put("expiredDate", date);
+                                                notificationData.put("status", "unread");
+                                                notificationData.put("message", currentUserEmail + " has a new event!");
+                                                notificationData.put("activityType", "event");
+
+                                                db.collection("notifications")
+                                                        .add(notificationData)
+                                                        .addOnSuccessListener(documentReference -> {
+                                                            Log.d("Notification", "Notification stored successfully (fallback to email)");
+                                                        })
+                                                        .addOnFailureListener(err -> {
+                                                            Log.e("NotificationError", "Failed to store notification (fallback): " + err.getMessage());
+                                                        });
+                                            });
                                     // Clear form or navigate back
                                     requireActivity().getSupportFragmentManager().popBackStack();
                                 }
@@ -301,7 +358,6 @@ public class HostActivityFragment extends Fragment {
                     Toast.makeText(getContext(), "Failed to retrieve username: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
-
 
     protected boolean validateInputs() {
         if (eventNameInput.getText().toString().trim().isEmpty()) {

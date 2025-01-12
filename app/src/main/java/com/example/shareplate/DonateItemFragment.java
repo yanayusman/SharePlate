@@ -284,10 +284,10 @@ public class DonateItemFragment extends Fragment {
 
                     Map<String, Object> notificationData = new HashMap<>();
                     notificationData.put("ownerEmail", ownerEmail);
-                    notificationData.put("itemName", "[NEW DONATION] " + name);
+                    notificationData.put("itemName", name);
                     notificationData.put("location", location);
                     notificationData.put("imageUrl", imageUrl);
-                    notificationData.put("timestamp", System.currentTimeMillis());
+                    notificationData.put("expiredDate", expiredDate);
                     notificationData.put("status", "unread");
                     notificationData.put("message", ownersUsername + " has a new donation!");
 
@@ -306,10 +306,10 @@ public class DonateItemFragment extends Fragment {
                     // Fallback: Store notification with requester email if username fetch fails
                     Map<String, Object> notificationData = new HashMap<>();
                     notificationData.put("ownerEmail", ownerEmail);
-                    notificationData.put("itemName", "[NEW DONATION] " + name);
+                    notificationData.put("itemName", name);
                     notificationData.put("location", location);
                     notificationData.put("imageUrl", imageUrl);
-                    notificationData.put("timestamp", System.currentTimeMillis());
+                    notificationData.put("expiredDate", expiredDate);
                     notificationData.put("status", "unread");
                     notificationData.put("message", ownerEmail + " has a new donation!");
 

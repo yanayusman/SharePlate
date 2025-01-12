@@ -49,12 +49,13 @@ public class NotificationRepo {
                             String ownerEmail = document.getString("ownerEmail");
                             String requesterEmail = document.getString("requesterEmail");
                             String activityType = document.getString("activityType");
+                            String expiredDate = document.getString("expiredDate");
 
                             // Add notifications for both owner and requester
                             if (currentUserEmail != null &&
                                     (currentUserEmail.equals(ownerEmail) || currentUserEmail.equals(requesterEmail))) {
                                 if (title != null && !title.isEmpty()) {
-                                    Notification item = new Notification(title, message, timestamp, location, imgUrl, ownerEmail, requesterEmail, activityType);
+                                    Notification item = new Notification(title, message, timestamp, location, imgUrl, ownerEmail, requesterEmail, activityType, expiredDate);
                                     items.add(item);
                                 }
                             }
