@@ -300,8 +300,9 @@ public class HostActivityFragment extends Fragment {
                                                 notificationData.put("imageUrl", imageUrl);
                                                 notificationData.put("expiredDate", date);
                                                 notificationData.put("status", "unread");
-                                                notificationData.put("message", ownersUsername + " has a new event!");
+                                                notificationData.put("message", ownersUsername + " has a new event coming up!");
                                                 notificationData.put("activityType", "event");
+                                                notificationData.put("notiType", "all");
 
                                                 db.collection("notifications")
                                                         .add(notificationData)
@@ -323,8 +324,9 @@ public class HostActivityFragment extends Fragment {
                                                 notificationData.put("imageUrl", imageUrl);
                                                 notificationData.put("expiredDate", date);
                                                 notificationData.put("status", "unread");
-                                                notificationData.put("message", currentUserEmail + " has a new event!");
+                                                notificationData.put("message", currentUserEmail + " has a new event coming up!");
                                                 notificationData.put("activityType", "event");
+                                                notificationData.put("notiType", "all");
 
                                                 db.collection("notifications")
                                                         .add(notificationData)
