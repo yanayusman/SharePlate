@@ -117,5 +117,14 @@ public class ActionsFragment extends Fragment {
                     .addToBackStack(null)
                     .commit();
         });
+
+        Button viewNearbyButton = view.findViewById(R.id.view_nearby_button);
+        viewNearbyButton.setOnClickListener(v -> {
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new NearbyItemsFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
     }
 }

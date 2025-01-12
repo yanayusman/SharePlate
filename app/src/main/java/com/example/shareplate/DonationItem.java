@@ -11,6 +11,8 @@ public class DonationItem implements Serializable {
     private long createdAt;
     private String feedback;
     private String receiverEmail;
+    private String locationArea; // e.g., "Bukit Jalil"
+    private String locationState; // e.g., "Kuala Lumpur"
 
     // Constructor
     public DonationItem() {
@@ -33,6 +35,10 @@ public class DonationItem implements Serializable {
         this.createdAt = System.currentTimeMillis();
         this.donateType = donateType;
         this.email = email;
+        // Parse location into area and state
+        String[] locationParts = location.split(",");
+        this.locationArea = locationParts[0].trim();
+        this.locationState = locationParts.length > 1 ? locationParts[1].trim() : "";
     }
 
     // Getter methods
@@ -147,5 +153,13 @@ public class DonationItem implements Serializable {
 
     public void setReceiverEmail(String receiverEmail) {
         this.receiverEmail = receiverEmail;
+    }
+
+    public String getLocationArea() {
+        return locationArea;
+    }
+
+    public String getLocationState() {
+        return locationState;
     }
 }

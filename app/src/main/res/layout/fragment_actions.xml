@@ -178,6 +178,19 @@
                 android:textColor="@color/white"
                 android:textSize="22sp" />
 
+            <Button
+                android:id="@+id/view_nearby_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:backgroundTint="@color/button_green"
+                android:elevation="4dp"
+                android:padding="16dp"
+                android:layout_marginTop="8dp"
+                android:text="View Nearby Donations"
+                android:textColor="@color/white"
+                android:textSize="22sp" />
+
         </LinearLayout>
 
 
