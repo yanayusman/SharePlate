@@ -5,6 +5,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -35,6 +36,14 @@ public class NearbyItemsFragment extends Fragment {
                            @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_nearby_items, container, false);
         
+        // Add back button
+        ImageView backButton = view.findViewById(R.id.backBtn);
+        backButton.setOnClickListener(v -> {
+            if (getActivity() != null) {
+                getActivity().getSupportFragmentManager().popBackStack();
+            }
+        });
+
         // Initialize views
         recyclerView = view.findViewById(R.id.nearby_items_recycler_view);
         progressBar = view.findViewById(R.id.progress_bar);
