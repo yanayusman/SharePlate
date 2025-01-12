@@ -48,7 +48,6 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-
             </LinearLayout>
         </androidx.appcompat.widget.Toolbar>
 

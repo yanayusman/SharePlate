@@ -844,6 +844,17 @@ public class ProfilePage extends Fragment {
         if (requestedSection != null) requestedSection.setOnClickListener(v -> openHistory("requested"));
         if (campaignSection != null) campaignSection.setOnClickListener(v -> openHistory("campaigns"));
         if (volunteerSection != null) volunteerSection.setOnClickListener(v -> openHistory("volunteering"));
+
+        MaterialButton personalInfoButton = view.findViewById(R.id.personalInfoButton);
+        if (personalInfoButton != null) {
+            personalInfoButton.setOnClickListener(v -> {
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, new PersonalInfoFragment())
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
     }
 
 }

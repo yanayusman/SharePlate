@@ -115,6 +115,14 @@ public class EditProfile extends Fragment {
         selectLocationButton.setOnClickListener(v -> checkLocationSettings());
         updateButton.setOnClickListener(v -> updateUserProfile());
         profileImage.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
+
+        // Add click listener for back button
+        backButton.setOnClickListener(v -> {
+            // Pop the current fragment from the back stack
+            if (getActivity() != null) {
+                getActivity().getSupportFragmentManager().popBackStack();
+            }
+        });
     }
 
     private void initializeLocationHelper() {

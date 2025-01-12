@@ -122,8 +122,6 @@
                         android:layout_height="wrap_content"
                         android:layout_below="@id/profile_image"
                         android:layout_centerHorizontal="true"
-                        android:layout_marginTop="3dp"
-                        android:layout_marginBottom="3dp"
                         android:fontFamily="@font/poppins_bold"
                         android:textColor="#FFFFFF"
                         android:textSize="24sp"
@@ -344,6 +342,23 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="5dp"
                     android:orientation="vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/personalInfoButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="32dp"
+                        android:layout_marginEnd="32dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="Personal Information"
+                        android:textColor="@color/black"
+                        app:backgroundTint="#FFFFFF"
+                        app:icon="@drawable/ic_profile"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp"
+                        app:iconTint="#000000"
+                        app:strokeColor="#000000"
+                        app:strokeWidth="1dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/editProfileButton"
