@@ -43,22 +43,32 @@ public class NotificationRepo {
                         try {
                             String title = document.getString("itemName");
                             String message = document.getString("message");
-                            Long timestamp = document.getLong("timestamp");
+                            Long timestamp = document.contains("timestamp") ? document.getLong("timestamp") : System.currentTimeMillis();
                             String location = document.getString("location");
                             String imgUrl = document.getString("imageUrl");
                             String ownerEmail = document.getString("ownerEmail");
                             String requesterEmail = document.getString("requesterEmail");
                             String activityType = document.getString("activityType");
                             String expiredDate = document.getString("expiredDate");
+                            String notiType = document.getString("notiType");
 
                             // Add notifications for both owner and requester
-                            if (currentUserEmail != null &&
-                                    (currentUserEmail.equals(ownerEmail) || currentUserEmail.equals(requesterEmail))) {
-                                if (title != null && !title.isEmpty()) {
-                                    Notification item = new Notification(title, message, timestamp, location, imgUrl, ownerEmail, requesterEmail, activityType, expiredDate);
+                                // Add notifications for all users if notiType is "all"
+                                if ("all".equals(notiType)) {
+                                    Log.d("NotificationDebug", "Notification Type: " + title);
+                                    Notification item = new Notification(title, message, timestamp, location, imgUrl, ownerEmail, requesterEmail, activityType, expiredDate, notiType);
+                                    items.add(item);
+                                } else if ("request".equals(notiType)) {
+                                    Log.d("NotificationDebug", "Notification Type: " + title);
+                                    Notification item = new Notification(title, message, timestamp, location, imgUrl, ownerEmail, requesterEmail, activityType, expiredDate, notiType);
+                                    items.add(item);
+                                } else if ((currentUserEmail.equals(ownerEmail) || currentUserEmail.equals(requesterEmail))) {
+                                    // Add notifications for specific users based on email match
+                                    Notification item = new Notification(title, message, timestamp, location, imgUrl, ownerEmail, requesterEmail, activityType, expiredDate, notiType);
                                     items.add(item);
                                 }
-                            }
+
+
                         } catch (Exception e) {
                             System.err.println("Error parsing document: " + e.getMessage());
                         }

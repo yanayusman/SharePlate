@@ -3,6 +3,7 @@ package com.example.shareplate;
 import android.app.Activity;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,8 @@ import android.widget.Toast;
 import android.net.Uri;
 import android.content.Intent;
 import android.provider.MediaStore;
+
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.bumptech.glide.Glide;
@@ -25,6 +28,7 @@ import androidx.fragment.app.Fragment;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Locale;
 import android.widget.ProgressBar;
 import com.google.firebase.auth.FirebaseAuth;
@@ -39,6 +43,7 @@ import java.io.IOException;
 import androidx.core.content.FileProvider;
 
 import java.util.Date;
+import java.util.Map;
 
 import android.app.AlertDialog;
 
@@ -214,7 +219,7 @@ public class RequestFoodFragment extends Fragment {
             return;
         }
 
-        String email = currentUser.getEmail();
+        String currentUserEmail = currentUser.getEmail();
         String ownerProfileImageUrl = currentUser.getPhotoUrl() != null ?
                 currentUser.getPhotoUrl().toString() : "";
 
@@ -230,7 +235,7 @@ public class RequestFoodFragment extends Fragment {
                 imageUrl,
                 donateType,
                 ownerProfileImageUrl,
-                email
+                currentUserEmail
         );
 
         // Save to repository
@@ -240,6 +245,64 @@ public class RequestFoodFragment extends Fragment {
             public void onRequestSuccess() {
                 if (getContext() != null) {
                     Toast.makeText(getContext(), "Request added successfully", Toast.LENGTH_SHORT).show();
+
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                    // Fetch the username from the users collection
+                    db.collection("users")
+                            .whereEqualTo("email", currentUserEmail)
+                            .get()
+                            .addOnSuccessListener(querySnapshot -> {
+                                String ownersUsername = "Unknown User";
+                                if (!querySnapshot.isEmpty()) {
+                                    ownersUsername = querySnapshot.getDocuments().get(0).getString("username");
+                                }
+
+                                Map<String, Object> notificationData = new HashMap<>();
+                                notificationData.put("ownerEmail", currentUserEmail);
+                                notificationData.put("itemName", name);
+                                notificationData.put("location", location);
+                                notificationData.put("imageUrl", imageUrl);
+                                notificationData.put("expiredDate", pickupTime);
+                                notificationData.put("status", "unread");
+                                notificationData.put("message", ownersUsername + " has a new request!");
+                                notificationData.put("activityType", "request");
+                                notificationData.put("notiType", "all");
+
+                                db.collection("notifications")
+                                        .add(notificationData)
+                                        .addOnSuccessListener(documentReference -> {
+                                            Log.d("Notification", "Notification stored successfully");
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            Log.e("NotificationError", "Failed to store notification: " + e.getMessage());
+                                        });
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("UserQueryError", "Failed to fetch requester username: " + e.getMessage());
+
+                                // Fallback: Store notification with requester email if username fetch fails
+                                Map<String, Object> notificationData = new HashMap<>();
+                                notificationData.put("ownerEmail", currentUserEmail);
+                                notificationData.put("itemName", name);
+                                notificationData.put("location", location);
+                                notificationData.put("imageUrl", imageUrl);
+                                notificationData.put("expiredDate", pickupTime);
+                                notificationData.put("status", "unread");
+                                notificationData.put("message", currentUserEmail + " has a new request!");
+                                notificationData.put("activityType", "request");
+                                notificationData.put("notiType", "all");
+
+                                db.collection("notifications")
+                                        .add(notificationData)
+                                        .addOnSuccessListener(documentReference -> {
+                                            Log.d("Notification", "Notification stored successfully (fallback to email)");
+                                        })
+                                        .addOnFailureListener(err -> {
+                                            Log.e("NotificationError", "Failed to store notification (fallback): " + err.getMessage());
+                                        });
+                            });
+
                     // Clear form or navigate back
                     requireActivity().getSupportFragmentManager().popBackStack();
                 }

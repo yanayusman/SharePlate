@@ -23,6 +23,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:fontFamily="@font/poppins_bold"
+            android:textColor="#000000"
             android:textSize="20sp"
             android:textStyle="bold" />
         <!-- Timestamp -->
@@ -42,6 +43,7 @@
             android:layout_marginTop="16dp"
             android:fontFamily="@font/poppins"
             android:gravity="center_horizontal"
+            android:textColor="#504D4D"
             android:textSize="16sp"
             android:textStyle="bold" />
         <!-- Food Image -->
@@ -64,6 +66,7 @@
             android:layout_marginEnd="10dp"
             android:fontFamily="@font/poppins"
             android:gravity="center_horizontal"
+            android:textColor="#4CAF50"
             android:textSize="16sp" />
         <!-- Action Button -->
     </LinearLayout>

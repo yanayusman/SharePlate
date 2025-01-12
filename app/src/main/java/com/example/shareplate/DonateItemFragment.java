@@ -290,6 +290,7 @@ public class DonateItemFragment extends Fragment {
                     notificationData.put("expiredDate", expiredDate);
                     notificationData.put("status", "unread");
                     notificationData.put("message", ownersUsername + " has a new donation!");
+                    notificationData.put("notiType", "all");
 
                     db.collection("notifications")
                             .add(notificationData)
@@ -312,6 +313,7 @@ public class DonateItemFragment extends Fragment {
                     notificationData.put("expiredDate", expiredDate);
                     notificationData.put("status", "unread");
                     notificationData.put("message", ownerEmail + " has a new donation!");
+                    notificationData.put("notiType", "all");
 
                     db.collection("notifications")
                             .add(notificationData)

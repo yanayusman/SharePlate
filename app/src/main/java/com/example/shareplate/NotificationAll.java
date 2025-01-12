@@ -95,134 +95,6 @@ public class NotificationAll extends Fragment {
         });
     }
 
-//    private void addNotificationView(Notification notification) {
-//        View eventItem = getLayoutInflater().inflate(R.layout.notification_view, eventGrid, false);
-//        ImageView notificationImg = eventItem.findViewById(R.id.item_image);
-//        TextView notificationTitle = eventItem.findViewById(R.id.item_name);
-//        TextView notificationDate = eventItem.findViewById(R.id.item_date);
-//        TextView notificationLocation = eventItem.findViewById(R.id.item_location);
-//        TextView notificationMessage = eventItem.findViewById(R.id.item_desc);
-//
-//        if (notification.getImgUrl() != null && !notification.getImgUrl().isEmpty()) {
-//            Glide.with(this)
-//                    .load(notification.getImgUrl())
-//                    .placeholder(R.drawable.placeholder_image)
-//                    .error(R.drawable.placeholder_image)
-//                    .centerCrop()
-//                    .into(notificationImg);
-//        } else {
-//            notificationImg.setImageResource(0);
-//        }
-//
-//        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-//        String currentUserEmail = currentUser.getEmail();
-//
-//        // Check expiration date logic
-//        SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-//        try {
-//            String expirationString = notification.getExpiredDate();
-//            if (expirationString != null && !expirationString.isEmpty()) {
-//                // Parse expiration date to milliseconds
-//                Date expirationDate = dateFormat.parse(expirationString);
-//                long expirationTimeMillis = expirationDate.getTime();
-//
-//                // Get current date without time
-//                Calendar calendar = Calendar.getInstance();
-//                calendar.set(Calendar.HOUR_OF_DAY, 0);
-//                calendar.set(Calendar.MINUTE, 0);
-//                calendar.set(Calendar.SECOND, 0);
-//                calendar.set(Calendar.MILLISECOND, 0);
-//                long currentDateMillis = calendar.getTimeInMillis();
-//
-//                // Define one day in milliseconds
-//                long oneDayMillis = 24 * 60 * 60 * 1000;
-//
-//                if (expirationTimeMillis > currentDateMillis) {
-//                    if (expirationTimeMillis - currentDateMillis <= oneDayMillis) {
-//                        notificationTitle.setText("[Alert] Food Expiring Soon: " + notification.getTitle());
-//                        notificationDate.setText("Expires on: " + expirationString);
-//                        notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-//                        notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
-//
-//                        eventItem.setOnClickListener(v -> {
-//                            NotificationFragment detailFragment = NotificationFragment.newInstance(notification);
-//                            requireActivity().getSupportFragmentManager()
-//                                    .beginTransaction()
-//                                    .replace(R.id.fragment_container, detailFragment)
-//                                    .addToBackStack(null)
-//                                    .commit();
-//                        });
-//
-//                        // Check and remove if already in parent view
-//                        if (eventItem.getParent() != null) {
-//                            ((ViewGroup) eventItem.getParent()).removeView(eventItem);
-//                        }
-//                        eventGrid.addView(eventItem);
-//                    }
-//                } else {
-//                    Log.d("ExpirationAlert", "Food has already expired: " + expirationString);
-//                }
-//            } else {
-//                Log.e("ExpirationAlert", "Invalid or empty expiration date.");
-//            }
-//        } catch (ParseException e) {
-//            Log.e("ExpirationAlert", "Failed to parse expiration date: " + notification.getExpiredDate(), e);
-//        }
-//
-//
-//        // Regular notification handling for non-expiration events
-//        if (currentUserEmail.equals(notification.getRequesterEmail())) {
-//            if ("event".equals(notification.getActivityType())) {
-//                notificationTitle.setText("[Reminder] Your Upcoming Event!! " + notification.getTitle());
-//                notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
-//                notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-//                notificationMessage.setVisibility(View.GONE);
-//
-//                eventItem.setOnClickListener(v -> {
-//                    NotificationFragment detailFragment = NotificationFragment.newInstance(notification);
-//                    requireActivity().getSupportFragmentManager()
-//                            .beginTransaction()
-//                            .replace(R.id.fragment_container, detailFragment)
-//                            .addToBackStack(null)
-//                            .commit();
-//                });
-//            } else {
-//                notificationTitle.setText(notification.getTitle());
-//                notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
-//                notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-//                notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
-//
-//                eventItem.setOnClickListener(v -> {
-//                    NotificationFragment detailFragment = NotificationFragment.newInstance(notification);
-//                    requireActivity().getSupportFragmentManager()
-//                            .beginTransaction()
-//                            .replace(R.id.fragment_container, detailFragment)
-//                            .addToBackStack(null)
-//                            .commit();
-//                });
-//            }
-//        } else {
-//            notificationTitle.setText(notification.getTitle());
-//            notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
-//            notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-//            notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
-//
-//            eventItem.setOnClickListener(v -> {
-//                NotificationFragment detailFragment = NotificationFragment.newInstance(notification);
-//                requireActivity().getSupportFragmentManager()
-//                        .beginTransaction()
-//                        .replace(R.id.fragment_container, detailFragment)
-//                        .addToBackStack(null)
-//                        .commit();
-//            });
-//        }
-//
-//        if (eventItem.getParent() != null) {
-//            ((ViewGroup) eventItem.getParent()).removeView(eventItem);
-//        }
-//        eventGrid.addView(eventItem);
-//    }
-
     private void addNotificationView(Notification notification) {
         View eventItem = getLayoutInflater().inflate(R.layout.notification_view, eventGrid, false);
         ImageView notificationImg = eventItem.findViewById(R.id.item_image);
@@ -270,7 +142,7 @@ public class NotificationAll extends Fragment {
                     notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
                     setupItemClick(eventItem, notification);
                     eventGrid.addView(eventItem);
-                    return; // Skip adding it as a regular notification
+                    return;
                 }
             }
         } catch (ParseException e) {
@@ -278,30 +150,62 @@ public class NotificationAll extends Fragment {
         }
 
 
-
-
         // Handle other notifications
         if (currentUserEmail != null) {
-            if (currentUserEmail.equals(notification.getRequesterEmail())) {
-                if ("event".equals(notification.getActivityType())) {
+
+            if("event".equals(notification.getActivityType())){
+                if("all".equals(notification.getNotiType())){
+                    notificationTitle.setText("[New Event] " + notification.getTitle());
+                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    notificationDate.setText("Posted on: " + (notification.getExpiredDate() != null ? notification.getExpiredDate() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }else if(currentUserEmail.equals(notification.getRequesterEmail())){
                     notificationTitle.setText("[Reminder] Your Upcoming Event!! " + notification.getTitle());
                     notificationMessage.setVisibility(View.GONE);
-                } else {
-                    notificationTitle.setText(notification.getTitle());
+                    notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }else if(currentUserEmail.equals(notification.getOwnerEmail())){
+                    notificationTitle.setText("[New Member] " + notification.getTitle());
                     notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
                 }
-            } else if ("event".equals(notification.getActivityType()) && currentUserEmail.equals(notification.getOwnerEmail())) {
-                notificationTitle.setText(notification.getTitle());
-                notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
-            } else {
-                notificationTitle.setText("[New Donation] " + notification.getTitle());
-                notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+            }else if("request".equals(notification.getActivityType())){
+                if("all".equals(notification.getNotiType())){
+                    notificationTitle.setText("[New Request] " + notification.getTitle());
+                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    notificationDate.setText("Posted on: " + (notification.getExpiredDate() != null ? notification.getExpiredDate() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }else if(currentUserEmail.equals(notification.getRequesterEmail())){
+                    notificationTitle.setText("[Donation Processing...] " + notification.getTitle());
+                    notificationMessage.setVisibility(View.GONE);
+                    notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }else if(currentUserEmail.equals(notification.getOwnerEmail())){
+                    notificationTitle.setText("[Successfull Request] " + notification.getTitle());
+                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }
+            }else {
+                if("all".equals(notification.getNotiType())){
+                    notificationTitle.setText("[New Donation] " + notification.getTitle());
+                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    notificationDate.setText("Posted on: " + (notification.getExpiredDate() != null ? notification.getExpiredDate() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }else if(currentUserEmail.equals(notification.getOwnerEmail())){
+                    notificationTitle.setText("[Donation Request] " + notification.getTitle());
+                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }else if(currentUserEmail.equals(notification.getRequesterEmail())) {
+                    notificationTitle.setText("[Request Proccessing...] " + notification.getTitle());
+                    notificationMessage.setVisibility(View.GONE);
+                    notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }
             }
         }
-
-        notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
-        notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-
 
         setupItemClick(eventItem, notification);
 

@@ -92,7 +92,7 @@ public class ActionsFragment extends Fragment {
         });
 
         requestFood.setOnClickListener(v -> {
-            // Navigate to DonateNonFoodFragment
+            // Navigate to RequestFoodFragment
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container, new RequestFoodFragment())
@@ -101,7 +101,7 @@ public class ActionsFragment extends Fragment {
         });
 
         requestNonFood.setOnClickListener(v -> {
-            // Navigate to DonateNonFoodFragment
+            // Navigate to RequestNonFoodFragment
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container, new RequestNonFoodFragment())
@@ -110,7 +110,7 @@ public class ActionsFragment extends Fragment {
         });
 
         hostEvent.setOnClickListener(v -> {
-            // Navigate to DonateNonFoodFragment
+            // Navigate to HostActivityFragment
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container, new HostActivityFragment())

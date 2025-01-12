@@ -24,8 +24,13 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 // This fragment displays the list of all notifications in the app.
 // It handles the display of all notifications by using a RecyclerView to show each notification item.
@@ -101,13 +106,13 @@ public class NotificationFragment extends Fragment {
     private void setupViews(View view) {
         // Remove the back button setup since it's now handled in onViewCreated
         // Get views and set their values
-        ImageView notiImg = view.findViewById(R.id.notificationImage);
-        TextView notiTitle = view.findViewById(R.id.notificationTitle);
-        TextView notiTimestamp = view.findViewById(R.id.notificationTimestamp);
-        TextView notiMessage = view.findViewById(R.id.notificationMessage);
-        TextView notiLocation = view.findViewById(R.id.notificationDetails);
+        ImageView notificationImg = view.findViewById(R.id.notificationImage);
+        TextView notificationTitle = view.findViewById(R.id.notificationTitle);
+        TextView notificationDate = view.findViewById(R.id.notificationTimestamp);
+        TextView notificationMessage = view.findViewById(R.id.notificationMessage);
+        TextView notificationLocation = view.findViewById(R.id.notificationDetails);
 
-        notiImg.setOnClickListener(v -> {
+        notificationImg.setOnClickListener(v -> {
             FullScreenImageFragment fullScreenFragment =
                     FullScreenImageFragment.newInstance(notification.getImgUrl(), 0);
             requireActivity().getSupportFragmentManager()
@@ -120,59 +125,129 @@ public class NotificationFragment extends Fragment {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         String currentUserEmail = currentUser.getEmail();
 
-        if (currentUserEmail.equals(notification.getRequesterEmail())) {
-            Log.d("Activity!!!!!", "Activity Type : " + notification.getActivityType());
+        // Handle expiration notifications
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+        try {
+            String expirationString = notification.getExpiredDate();
+            if (expirationString != null && !expirationString.isEmpty()) {
+                Date expirationDate = dateFormat.parse(expirationString);
+                long expirationTimeMillis = expirationDate.getTime();
 
+                // Get current date at midnight
+                Calendar calendar = Calendar.getInstance();
+                calendar.set(Calendar.HOUR_OF_DAY, 0);
+                calendar.set(Calendar.MINUTE, 0);
+                calendar.set(Calendar.SECOND, 0);
+                calendar.set(Calendar.MILLISECOND, 0);
+                long currentDateMillis = calendar.getTimeInMillis();
+
+                // Check if expiring within one day
+                if (expirationTimeMillis > currentDateMillis && expirationTimeMillis - currentDateMillis <= 24 * 60 * 60 * 1000) {
+                    notificationTitle.setText("[Alert] Food Expiring Soon: " + notification.getTitle());
+                    notificationDate.setText("Expires on: " + expirationString);
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    return;
+                }
+            }
+        } catch (ParseException e) {
+            Log.e("ExpirationAlert", "Failed to parse expiration date: " + notification.getExpiredDate(), e);
+        }
+
+        if (currentUserEmail != null) {
             if ("event".equals(notification.getActivityType())) {
-                if (notification.getImgUrl() != null && !notification.getImgUrl().isEmpty()) {
-                    Glide.with(this)
-                            .load(notification.getImgUrl())
-                            .placeholder(R.drawable.placeholder_image)
-                            .error(R.drawable.placeholder_image)
-                            .centerCrop()
-                            .into(notiImg);
-                } else {
-                    notiImg.setImageResource(0);
-                }
+                if ("all".equals(notification.getNotiType())) {
 
-                notiTitle.setText("\tREMINDER!!\n" + notification.getTitle());
-                notiTimestamp.setText("Date and Time : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
-                notiLocation.setText("Location : " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-                notiMessage.setText("Dont forget Your Upcoming Event!!");
+                    imageUpload(notificationImg);
+
+                    notificationTitle.setText("NEW EVENT!!\n " + notification.getTitle());
+                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    notificationDate.setText("Posted on: " + (notification.getExpiredDate() != null ? notification.getExpiredDate() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+
+                } else if (currentUserEmail.equals(notification.getRequesterEmail())) {
+
+                    imageUpload(notificationImg);
+
+                    notificationTitle.setText("REMINDER!!\n " + notification.getTitle());
+                    notificationMessage.setText("Dont forget Your Upcoming Event!!");
+                    notificationDate.setText("Date and Time : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                } else if (currentUserEmail.equals(notification.getOwnerEmail())) {
+
+                    imageUpload(notificationImg);
+
+                    notificationTitle.setText("New Participant to Help with Your Event!!\n " + notification.getTitle());
+                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }
+            } else if("request".equals(notification.getActivityType())){
+                if("all".equals(notification.getNotiType())){
+
+                    imageUpload(notificationImg);
+
+                    notificationTitle.setText("NEW REQUEST!!\n " + notification.getTitle());
+                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    notificationDate.setText("Posted on: " + (notification.getExpiredDate() != null ? notification.getExpiredDate() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }else if(currentUserEmail.equals(notification.getRequesterEmail())){
+
+                    imageUpload(notificationImg);
+
+                    notificationTitle.setText("Donation Processing...\n " + notification.getTitle());
+                    notificationMessage.setText("Description: Your donation has been successfully processed.");
+                    notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }else if(currentUserEmail.equals(notification.getOwnerEmail())){
+
+                    imageUpload(notificationImg);
+
+                    notificationTitle.setText("Successfull Request!!\n " + notification.getTitle());
+                    notificationMessage.setText("Description: Your request has been processed. All you have to do is wait at your door step;) ");
+                    notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }
             } else {
-                if (notification.getImgUrl() != null && !notification.getImgUrl().isEmpty()) {
-                    Glide.with(this)
-                            .load(notification.getImgUrl())
-                            .placeholder(R.drawable.placeholder_image)
-                            .error(R.drawable.placeholder_image)
-                            .centerCrop()
-                            .into(notiImg);
-                } else {
-                    notiImg.setImageResource(0);
+                if("all".equals(notification.getNotiType())){
+
+                    imageUpload(notificationImg);
+
+                    notificationTitle.setText("NEW DONATION!!\n " + notification.getTitle());
+                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    notificationDate.setText("Posted on: " + (notification.getExpiredDate() != null ? notification.getExpiredDate() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }else if(currentUserEmail.equals(notification.getOwnerEmail())){
+
+                    imageUpload(notificationImg);
+
+                    notificationTitle.setText("New Request For Your Donation!!\n " + notification.getTitle());
+                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                    notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                }else if(currentUserEmail.equals(notification.getRequesterEmail())) {
+
+                    imageUpload(notificationImg);
+
+                    notificationTitle.setText("Request Proccessing!!\n " + notification.getTitle());
+                    notificationMessage.setText("Your request has been successfully processed. All you have to do is wait at your door step;)");
+                    notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
+                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
                 }
-
-                notiTitle.setText(notification.getTitle());
-                notiTimestamp.setText("Posted on : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
-                notiLocation.setText("Location : " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-                notiMessage.setText("Description : " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
             }
+        }
+    }
 
+    private void imageUpload(ImageView notificationImg){
+        if (notification.getImgUrl() != null && !notification.getImgUrl().isEmpty()) {
+            Glide.with(this)
+                    .load(notification.getImgUrl())
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(R.drawable.placeholder_image)
+                    .centerCrop()
+                    .into(notificationImg);
         } else {
-            if (notification.getImgUrl() != null && !notification.getImgUrl().isEmpty()) {
-                Glide.with(this)
-                        .load(notification.getImgUrl())
-                        .placeholder(R.drawable.placeholder_image)
-                        .error(R.drawable.placeholder_image)
-                        .centerCrop()
-                        .into(notiImg);
-            } else {
-                notiImg.setImageResource(0);
-            }
-
-            notiTitle.setText(notification.getTitle());
-            notiTimestamp.setText("Posted on : " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
-            notiLocation.setText("Location : " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-            notiMessage.setText("Description : " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+            notificationImg.setImageResource(0);
         }
     }
 }
