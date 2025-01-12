@@ -77,11 +77,11 @@ public class EditNonFoodFragment extends DonateNonFoodFragment {
                 quantityInput.getText().toString(),
                 pickupTimeInput.getText().toString(),
                 locationInput.getText().toString(),
-                donationItem.getImageResourceId(),
+                R.drawable.placeholder_image,
                 donationItem.getImageUrl(),
-                donationItem.getEmail(),
+                donationItem.getDonateType(),
                 donationItem.getOwnerProfileImageUrl(),
-                donationItem.getDonateType()
+                donationItem.getEmail()
         );
 
         updatedItem.setDocumentId(donationItem.getDocumentId());
