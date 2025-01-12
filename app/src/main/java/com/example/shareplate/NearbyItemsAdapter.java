@@ -1,5 +1,7 @@
 package com.example.shareplate;
 
+import android.content.Context;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -15,9 +18,15 @@ import java.util.List;
 
 public class NearbyItemsAdapter extends RecyclerView.Adapter<NearbyItemsAdapter.ViewHolder> {
     private final List<DonationItem> items;
+    private final OnItemClickListener listener;
 
-    public NearbyItemsAdapter(List<DonationItem> items) {
+    public interface OnItemClickListener {
+        void onItemClick(DonationItem item);
+    }
+
+    public NearbyItemsAdapter(List<DonationItem> items, OnItemClickListener listener) {
         this.items = items;
+        this.listener = listener;
     }
 
     @NonNull
@@ -41,6 +50,13 @@ public class NearbyItemsAdapter extends RecyclerView.Adapter<NearbyItemsAdapter.
                     .load(item.getImageUrl())
                     .into(holder.imageView);
         }
+
+        // Add click listener to the entire item view
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(item);
+            }
+        });
     }
 
     @Override

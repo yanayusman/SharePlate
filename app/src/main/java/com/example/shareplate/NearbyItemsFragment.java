@@ -151,7 +151,22 @@ public class NearbyItemsFragment extends Fragment {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         if (!nearbyItems.isEmpty()) {
-                            adapter = new NearbyItemsAdapter(nearbyItems);
+                            adapter = new NearbyItemsAdapter(nearbyItems, item -> {
+                                // Handle item click
+                                Fragment detailFragment;
+                                if ("Food".equals(item.getCategory())) {
+                                    detailFragment = FoodItemDetailFragment.newInstance(item);
+                                } else {
+                                    detailFragment = NonFoodItemDetail.newInstance(item);
+                                }
+
+                                // Navigate to the detail fragment
+                                requireActivity().getSupportFragmentManager()
+                                        .beginTransaction()
+                                        .replace(R.id.fragment_container, detailFragment)
+                                        .addToBackStack(null)
+                                        .commit();
+                            });
                             recyclerView.setAdapter(adapter);
                         } else {
                             showError("No items found near " + userLocation);
