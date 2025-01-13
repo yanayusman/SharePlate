@@ -156,6 +156,7 @@ public class NotificationAll extends Fragment {
         // Handle other notifications
         if (currentUserEmail != null) {
 
+            //events type
             if("event".equals(notification.getActivityType())){
                 if("all".equals(notification.getNotiType())){
                     notificationTitle.setText("[New Event] " + notification.getTitle());
@@ -173,6 +174,7 @@ public class NotificationAll extends Fragment {
                     notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
                     notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
                 }
+                //request type
             }else if("request".equals(notification.getActivityType())){
                 if("all".equals(notification.getNotiType())){
                     notificationTitle.setText("[New Request] " + notification.getTitle());
@@ -180,7 +182,7 @@ public class NotificationAll extends Fragment {
                     notificationDate.setText("Posted on: " + (notification.getExpiredDate() != null ? notification.getExpiredDate() : "N/A"));
                     notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
                 }else if(currentUserEmail.equals(notification.getRequesterEmail())){
-                    notificationTitle.setText("[Donation Processing...] " + notification.getTitle());
+                    notificationTitle.setText("[Request Processing...] " + notification.getTitle());
                     notificationMessage.setVisibility(View.GONE);
                     notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
                     notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
@@ -190,6 +192,7 @@ public class NotificationAll extends Fragment {
                     notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
                     notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
                 }
+                //donation type
             }else {
                 if("all".equals(notification.getNotiType())){
                     notificationTitle.setText("[New Donation] " + notification.getTitle());
@@ -202,7 +205,7 @@ public class NotificationAll extends Fragment {
                     notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
                     notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
                 }else if(currentUserEmail.equals(notification.getRequesterEmail())) {
-                    notificationTitle.setText("[Request Proccessing...] " + notification.getTitle());
+                    notificationTitle.setText("[Donation Proccessing...] " + notification.getTitle());
                     notificationMessage.setVisibility(View.GONE);
                     notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
                     notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
