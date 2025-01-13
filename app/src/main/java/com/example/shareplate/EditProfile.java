@@ -152,6 +152,20 @@ public class EditProfile extends Fragment {
     }
 
     private void checkLocationSettings() {
+        // First check for location permissions
+        if (requireContext().checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && requireContext().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Request location permissions
+            requestPermissions(
+                    new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                    },
+                    LOCATION_PERMISSION_REQUEST_CODE
+            );
+            return;
+        }
+
         LocationManager locationManager = (LocationManager) requireContext()
                 .getSystemService(Context.LOCATION_SERVICE);
 
@@ -405,12 +419,11 @@ public class EditProfile extends Fragment {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission granted, get location
+                // Permission granted, proceed with location check
                 checkLocationSettings();
             } else {
-                Toast.makeText(requireContext(),
-                        "Location permission denied. Cannot get current location.",
-                        Toast.LENGTH_SHORT).show();
+                // Permission denied
+                Toast.makeText(requireContext(), "Location permission is required to select location", Toast.LENGTH_SHORT).show();
                 showManualLocationInput();
             }
         }
