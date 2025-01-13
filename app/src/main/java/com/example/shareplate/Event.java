@@ -11,6 +11,12 @@ public class Event implements Serializable {
 
     private final int imageResourceId;
     private long createdAt;
+    
+    // Required empty constructor for Firebase
+    public Event() {
+        this.imageResourceId = 0; // Default value for final field
+    }
+    
     public Event(String name, String desc, String date, String time, String typeOfEvents, String seatAvailable, String location, int img, String imageUrl, String ownerProfileImageUrl, String email, String ownerUsername){
 
         this.name = name;
