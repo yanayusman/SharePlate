@@ -116,14 +116,15 @@
                 android:layout_marginBottom="16dp"
                 style="@style/DonateInputLayout">
 
-                <EditText
+                <Spinner
                     android:id="@+id/urgency_level_input"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
+                    android:entries="@array/urgency_levels"
+                    android:fontFamily="@font/poppins"
                     android:hint="Urgency Level"
-                    android:inputType="text"
-                    android:textColor="@color/black"
-                    android:fontFamily="@font/poppins"/>
+                    android:spinnerMode="dropdown"
+                    android:textColor="@color/black" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
