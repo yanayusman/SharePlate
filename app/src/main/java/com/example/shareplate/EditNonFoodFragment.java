@@ -51,7 +51,7 @@ public class EditNonFoodFragment extends DonateNonFoodFragment {
                 if (donationItem.getImageUrl() != null && !donationItem.getImageUrl().isEmpty()) {
                     Glide.with(requireContext())
                             .load(donationItem.getImageUrl())
-                            .into(foodImageView);
+                            .into(itemImageView);
                 }
             }
         }

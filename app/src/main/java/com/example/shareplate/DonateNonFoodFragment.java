@@ -37,7 +37,7 @@ public class DonateNonFoodFragment extends Fragment {
     private NonFoodItemRepository nonFoodItemRepository;
     private Calendar timeCalendar;
     private SimpleDateFormat timeFormatter;
-    private ImageView itemImageView;
+    protected ImageView itemImageView;
     protected ImageView foodImageView;
     protected Uri selectedImageUri;
     private ActivityResultLauncher<Intent> imagePickerLauncher;
