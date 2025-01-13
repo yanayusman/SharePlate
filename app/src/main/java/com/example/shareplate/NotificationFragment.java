@@ -197,8 +197,8 @@ public class NotificationFragment extends Fragment {
 
                     imageUpload(notificationImg);
 
-                    notificationTitle.setText("Donation Processing...\n " + notification.getTitle());
-                    notificationMessage.setText("Description: Your donation has been successfully processed.");
+                    notificationTitle.setText("Request Processing...\n " + notification.getTitle());
+                    notificationMessage.setText("Description: Your donation for the request has been successfully processed.");
                     notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
                     notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
                 }else if(currentUserEmail.equals(notification.getOwnerEmail())){
@@ -231,7 +231,7 @@ public class NotificationFragment extends Fragment {
 
                     imageUpload(notificationImg);
 
-                    notificationTitle.setText("Request Proccessing!!\n " + notification.getTitle());
+                    notificationTitle.setText("Donation Proccessing!!\n " + notification.getTitle());
                     notificationMessage.setText("Your request has been successfully processed. All you have to do is wait at your door step;)");
                     notificationDate.setText("Posted on: " + (notification.getTimestamp() != null ? notification.getTimestamp() : "N/A"));
                     notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
