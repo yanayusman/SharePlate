@@ -41,4 +41,11 @@
     <string name="facebook_app_id">945572300457765</string>
     <string name="fb_login_protocol_scheme">fb945572300457765</string>
     <string name="facebook_client_token">785b8ff459f8542874e8809a3b87da35</string>
+
+    <string-array name="urgency_levels">
+        <item>High</item>
+        <item>Medium</item>
+        <item>Low</item>
+    </string-array>
+
 </resources>

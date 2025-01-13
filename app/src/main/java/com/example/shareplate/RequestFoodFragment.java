@@ -7,9 +7,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.Toast;
 import android.net.Uri;
 import android.content.Intent;
@@ -48,7 +50,8 @@ import java.util.Map;
 import android.app.AlertDialog;
 
 public class RequestFoodFragment extends Fragment {
-    protected EditText nameInput, foodCategoryInput, urgencyLevelInput, quantityInput, pickupTimeInput, locationInput;
+    protected EditText nameInput, foodCategoryInput, quantityInput, pickupTimeInput, locationInput;
+    protected Spinner urgencyLevelInput;
     protected Button submitButton;
     private ImageView backButton;
     private RequestFoodRepo requestFoodRepo;
@@ -205,9 +208,22 @@ public class RequestFoodFragment extends Fragment {
     }
 
     private void saveDonationWithImage(String imageUrl) {
+        urgencyLevelInput.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedUrgency = parent.getItemAtPosition(position).toString();
+                Log.d("SpinnerSelection", "Selected urgency level: " + selectedUrgency);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Handle case where nothing is selected if needed
+            }
+        });
+
         String name = nameInput.getText().toString();
         String foodCategory = foodCategoryInput.getText().toString();
-        String urgencyLevel = urgencyLevelInput.getText().toString();
+        String urgencyLevel = urgencyLevelInput.getSelectedItem().toString();
         String quantity = quantityInput.getText().toString();
         String pickupTime = pickupTimeInput.getText().toString();
         String location = locationInput.getText().toString();

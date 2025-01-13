@@ -64,7 +64,30 @@ public class ProfilePage extends Fragment {
     private StorageReference storageRef;
     private SwipeRefreshLayout swipeRefreshLayout;
     private FirebaseFirestore db;
-    private BroadcastReceiver statsUpdateReceiver;
+
+    // Single consolidated broadcast receiver
+    private final BroadcastReceiver profileReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action == null) return;
+
+            switch (action) {
+                case "profile.image.updated":
+                    loadProfileImage();
+                    break;
+                case "profile.username.updated":
+                    String newUsername = intent.getStringExtra("username");
+                    if (newUsername != null && profileUsername != null) {
+                        profileUsername.setText(newUsername);
+                    }
+                    break;
+                case "profile.stats.updated":
+                    fetchCurrentUserDetails();
+                    break;
+            }
+        }
+    };
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -73,17 +96,6 @@ public class ProfilePage extends Fragment {
         db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
         storageRef = storage.getReference();
-
-        // Add this: Initialize the stats update receiver
-        statsUpdateReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (intent.getAction() != null && intent.getAction().equals("profile.stats.updated")) {
-                    // Refresh the profile stats
-                    fetchCurrentUserDetails();
-                }
-            }
-        };
     }
 
     @Nullable
@@ -119,17 +131,14 @@ public class ProfilePage extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // Register receivers
         if (getActivity() != null) {
-            LocalBroadcastManager.getInstance(getActivity())
-                    .registerReceiver(profileUpdateReceiver, new IntentFilter("profile.image.updated"));
-            LocalBroadcastManager.getInstance(getActivity())
-                    .registerReceiver(usernameUpdateReceiver, new IntentFilter("profile.username.updated"));
-            LocalBroadcastManager.getInstance(getActivity())
-                    .registerReceiver(statsUpdateReceiver, new IntentFilter("profile.stats.updated"));
+            LocalBroadcastManager manager = LocalBroadcastManager.getInstance(getActivity());
+            IntentFilter filter = new IntentFilter();
+            filter.addAction("profile.image.updated");
+            filter.addAction("profile.username.updated");
+            filter.addAction("profile.stats.updated");
+            manager.registerReceiver(profileReceiver, filter);
         }
-        
-        // Refresh profile data
         fetchCurrentUserDetails();
     }
 
@@ -197,10 +206,7 @@ public class ProfilePage extends Fragment {
                         loadProfileImage();
 
                         // Fetch counts
-                        fetchDonatedCount(displayUsername);
-                        fetchRequestedCount(displayUsername);
-                        fetchCampaignsCount(displayUsername);
-                        fetchVolunteersCount(displayUsername);
+                        fetchAllCounts(displayUsername);
                     } else {
                         // Create a new user document if it doesn't exist
                         final String defaultUsername;
@@ -225,10 +231,7 @@ public class ProfilePage extends Fragment {
                                         profileUsername.setText(defaultUsername);
                                     }
                                     // Fetch counts after creating the document
-                                    fetchDonatedCount(defaultUsername);
-                                    fetchRequestedCount(defaultUsername);
-                                    fetchCampaignsCount(defaultUsername);
-                                    fetchVolunteersCount(defaultUsername);
+                                    fetchAllCounts(defaultUsername);
                                 })
                                 .addOnFailureListener(e -> {
                                     Log.e(TAG, "Error creating user document", e);
@@ -246,31 +249,6 @@ public class ProfilePage extends Fragment {
                 });
     }
 
-    // Add a new method to handle username updates
-    private BroadcastReceiver usernameUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String newUsername = intent.getStringExtra("newUsername");
-            if (newUsername != null && !newUsername.isEmpty()) {
-//                usernameTextView.setText(newUsername);
-                profileUsername.setText(newUsername);
-            }
-        }
-    };
-
-    private BroadcastReceiver profileUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String newProfileImageUrl = intent.getStringExtra("newProfileImageUrl");
-            if (newProfileImageUrl != null && !newProfileImageUrl.isEmpty() && profileImage != null) {
-                Glide.with(ProfilePage.this)
-                        .load(newProfileImageUrl)
-                        .circleCrop()
-                        .into(profileImage);
-            }
-        }
-    };
-
     private void setResetPassClickListener() {
         resetPass.setOnClickListener(v -> getParentFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, new ResetPasswordFragment())
@@ -278,164 +256,58 @@ public class ProfilePage extends Fragment {
                 .commit());
     }
 
-    private void fetchDonatedCount(String username) {
-        FirebaseUser currUser = mAuth.getCurrentUser();
-        if (currUser == null) return;
+    // Consolidated fetch count method
+    private void fetchCount(String username, String collection, String field, TextView countView) {
+        if (username == null || countView == null) return;
 
-        // Query the donations collection where donorUsername matches
-        db.collection(COLLECTION_DONATE)
-                .whereEqualTo("email", getDocumentId())
+        db.collection(collection)
+                .whereEqualTo(field, username)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!queryDocumentSnapshots.isEmpty()) {
-                        int donatedCountValue = 0;
-
-                        // Iterate through documents and count donations
-                        for (DocumentSnapshot document : queryDocumentSnapshots) {
-                            donatedCountValue++;
-                        }
-
-                        // Update the TextView
-                        if (donatedCountTV != null) {
-                            donatedCountTV.setText(String.valueOf(donatedCountValue));
-                        }
-                    } else {
-                        // No donations found
-                        if (donatedCountTV != null) {
-                            donatedCountTV.setText("0");
-                        }
-                    }
+                    int count = queryDocumentSnapshots.size();
+                    countView.setText(String.valueOf(count));
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching donated items count", e);
-                    if (donatedCountTV != null) {
-                        donatedCountTV.setText("0");
-                    }
+                    Log.e(TAG, "Error fetching " + collection + " count", e);
+                    countView.setText("0");
                 });
     }
 
-    private void fetchRequestedCount(String username) {
-        FirebaseUser currUser = mAuth.getCurrentUser();
-        if (currUser == null) return;
-
-        // Query the donations collection where donorUsername matches
-        db.collection(COLLECTION_REQUEST)
-                .whereEqualTo("email", getDocumentId())
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!queryDocumentSnapshots.isEmpty()) {
-                        int requestedCountValue = 0;
-
-                        // Iterate through documents and count donations
-                        for (DocumentSnapshot document : queryDocumentSnapshots) {
-                            requestedCountValue++;
-                        }
-
-                        // Update the TextView
-                        if (requestedCountTV != null) {
-                            requestedCountTV.setText(String.valueOf(requestedCountValue));
-                        }
-                    } else {
-                        // No donations found
-                        if (requestedCountTV != null) {
-                            requestedCountTV.setText("0");
-                        }
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching requested items count", e);
-                    if (requestedCountTV != null) {
-                        requestedCountTV.setText("0");
-                    }
-                });
+    // Replace individual fetch methods with calls to consolidated method
+    private void fetchAllCounts(String username) {
+        fetchCount(username, COLLECTION_DONATE, "ownerUsername", donatedCountTV);
+        fetchCount(username, COLLECTION_REQUEST, "requesterUsername", requestedCountTV);
+        fetchCount(username, "events", "ownerUsername", campaignsCountTV);
+        fetchCount(username, "volunteers", "username", volunteerCountTV);
     }
 
-    private void fetchCampaignsCount(String username) {
-        String documentId = getDocumentId();
-        if (documentId == null) {
-            Log.e(TAG, "Cannot fetch campaigns count: document ID is null");
-            if (campaignsCountTV != null) {
-                campaignsCountTV.setText("0");
-            }
-            return;
+    // Consolidated profile image handling
+    private void handleProfileImage(Uri imageUri) {
+        if (imageUri == null) return;
+
+        String userId = getDocumentId();
+        if (userId == null) return;
+
+        StorageReference imageRef = storageRef.child("profile_images").child(userId);
+        imageRef.putFile(imageUri)
+                .addOnSuccessListener(taskSnapshot -> imageRef.getDownloadUrl()
+                        .addOnSuccessListener(downloadUri -> {
+                            String imageUrl = downloadUri.toString();
+                            updateProfileImage(imageUrl);
+                            storeProfileImageInFirestore(imageUrl);
+                            updateDonationsProfileImage(imageUrl, profileUsername.getText().toString());
+                        })
+                        .addOnFailureListener(e -> Log.e(TAG, "Error getting download URL", e)))
+                .addOnFailureListener(e -> Log.e(TAG, "Error uploading image", e));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (getActivity() != null) {
+            LocalBroadcastManager.getInstance(getActivity())
+                    .unregisterReceiver(profileReceiver);
         }
-
-        // Query the donations collection where donorUsername matches
-        db.collection(COLLECTION_USER)
-                .document(documentId)
-                .collection(SUBCOLLECTION_USER)
-                .whereEqualTo("eventType", "Campaigns")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!queryDocumentSnapshots.isEmpty()) {
-                        int campaignsCountValue = 0;
-
-                        // Iterate through documents and count donations
-                        for (DocumentSnapshot document : queryDocumentSnapshots) {
-                            campaignsCountValue++;
-                        }
-
-                        // Update the TextView
-                        if (campaignsCountTV != null) {
-                            campaignsCountTV.setText(String.valueOf(campaignsCountValue));
-                        }
-                    } else {
-                        // No donations found
-                        if (campaignsCountTV != null) {
-                            campaignsCountTV.setText("0");
-                        }
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching campaigns items count", e);
-                    if (campaignsCountTV != null) {
-                        campaignsCountTV.setText("0");
-                    }
-                });
-    }
-
-    private void fetchVolunteersCount(String username) {
-        String documentId = getDocumentId();
-        if (documentId == null) {
-            Log.e(TAG, "Cannot fetch volunteers count: document ID is null");
-            if (volunteerCountTV != null) {
-                volunteerCountTV.setText("0");
-            }
-            return;
-        }
-
-        // Query the donations collection where donorUsername matches
-        db.collection(COLLECTION_USER)
-                .document(documentId)
-                .collection(SUBCOLLECTION_USER)
-                .whereEqualTo("eventType", "Volunteering")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!queryDocumentSnapshots.isEmpty()) {
-                        int volunteersCountValue = 0;
-
-                        // Iterate through documents and count donations
-                        for (DocumentSnapshot document : queryDocumentSnapshots) {
-                            volunteersCountValue++;
-                        }
-
-                        // Update the TextView
-                        if (volunteerCountTV != null) {
-                            volunteerCountTV.setText(String.valueOf(volunteersCountValue));
-                        }
-                    } else {
-                        // No donations found
-                        if (volunteerCountTV != null) {
-                            volunteerCountTV.setText("0");
-                        }
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching campaigns items count", e);
-                    if (volunteerCountTV != null) {
-                        volunteerCountTV.setText("0");
-                    }
-                });
     }
 
     private String getDocumentId() {
