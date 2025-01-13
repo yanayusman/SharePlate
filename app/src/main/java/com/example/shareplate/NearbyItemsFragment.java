@@ -33,9 +33,9 @@ public class NearbyItemsFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-                           @Nullable Bundle savedInstanceState) {
+                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_nearby_items, container, false);
-        
+
         // Add back button
         ImageView backButton = view.findViewById(R.id.backBtn);
         backButton.setOnClickListener(v -> {
@@ -48,10 +48,10 @@ public class NearbyItemsFragment extends Fragment {
         recyclerView = view.findViewById(R.id.nearby_items_recycler_view);
         progressBar = view.findViewById(R.id.progress_bar);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        
+
         // Show loading initially
         showLoading(true);
-        
+
         // Get user's location from profile
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
@@ -59,7 +59,7 @@ public class NearbyItemsFragment extends Fragment {
         }
 
         donationItemRepository = new DonationItemRepository();
-        
+
         return view;
     }
 
@@ -81,30 +81,30 @@ public class NearbyItemsFragment extends Fragment {
     private void getUserLocation(String userEmail) {
         Log.d(TAG, "getUserLocation: Fetching location for " + userEmail);
         FirebaseFirestore.getInstance()
-            .collection("users")
-            .whereEqualTo("email", userEmail)
-            .get()
-            .addOnSuccessListener(documents -> {
-                if (!documents.isEmpty()) {
-                    userLocation = documents.getDocuments().get(0).getString("location");
-                    Log.d(TAG, "getUserLocation: Found location: " + userLocation);
-                    if (userLocation != null && !userLocation.isEmpty()) {
-                        loadNearbyItems();
+                .collection("users")
+                .whereEqualTo("email", userEmail)
+                .get()
+                .addOnSuccessListener(documents -> {
+                    if (!documents.isEmpty()) {
+                        userLocation = documents.getDocuments().get(0).getString("location");
+                        Log.d(TAG, "getUserLocation: Found location: " + userLocation);
+                        if (userLocation != null && !userLocation.isEmpty()) {
+                            loadNearbyItems();
+                        } else {
+                            showLoading(false);
+                            showError("Please enable location services");
+                        }
                     } else {
+                        Log.d(TAG, "getUserLocation: No location found for user");
                         showLoading(false);
                         showError("Please enable location services");
                     }
-                } else {
-                    Log.d(TAG, "getUserLocation: No location found for user");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "getUserLocation: Error getting location", e);
                     showLoading(false);
-                    showError("Please enable location services");
-                }
-            })
-            .addOnFailureListener(e -> {
-                Log.e(TAG, "getUserLocation: Error getting location", e);
-                showLoading(false);
-                showError("Error getting user location: " + e.getMessage());
-            });
+                    showError("Error getting user location: " + e.getMessage());
+                });
     }
 
     private void loadNearbyItems() {
@@ -120,59 +120,47 @@ public class NearbyItemsFragment extends Fragment {
             @Override
             public void onDonationItemsLoaded(List<DonationItem> items) {
                 Log.d(TAG, "loadNearbyItems: Loaded " + items.size() + " total items");
-                
-                // Normalize user location
-                String normalizedUserLocation = userLocation.toLowerCase().trim();
-                String[] userLocationParts = normalizedUserLocation.split(",");
-                String userArea = userLocationParts[0].trim();
-                String userState = userLocationParts.length > 1 ? userLocationParts[1].trim() : "";
+                DistanceCalculator calc = new DistanceCalculator("AIzaSyD3paVgDTxJxSRCxUy0cj09SEee_fEB9Zc");
 
-                Log.d(TAG, "Searching for items near: " + userArea + ", " + userState);
-
-                // Filter nearby items
                 List<DonationItem> nearbyItems = new ArrayList<>();
+                int totalItems = items.size();
+                final int[] completedTasks = {0}; // Track completed distance calculations
+
                 for (DonationItem item : items) {
                     if (item.getLocation() != null) {
-                        String itemLocation = item.getLocation().toLowerCase().trim();
-                        
-                        // Check if locations match (same area or nearby areas)
-                        boolean isNearby = itemLocation.contains(userArea) || 
-                                         normalizedUserLocation.contains(itemLocation);
-
-                        if (isNearby) {
-                            Log.d(TAG, "Found nearby item: " + item.getName() + 
-                                  " at " + item.getLocation());
-                            nearbyItems.add(item);
-                        }
-                    }
-                }
-
-                // Update UI on main thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        if (!nearbyItems.isEmpty()) {
-                            adapter = new NearbyItemsAdapter(nearbyItems, item -> {
-                                // Handle item click
-                                Fragment detailFragment;
-                                if ("Food".equals(item.getCategory())) {
-                                    detailFragment = FoodItemDetailFragment.newInstance(item);
-                                } else {
-                                    detailFragment = NonFoodItemDetail.newInstance(item);
+                        calc.calculateDistance(userLocation, item.getLocation(), new DistanceCalculator.DistanceCalculationCallback() {
+                            @Override
+                            public void onSuccess(double distance) {
+                                Log.d(TAG, "Distance: " + distance + " for item: " + item.getName());
+                                if (distance < 4.0) {
+                                    nearbyItems.add(item);
                                 }
 
-                                // Navigate to the detail fragment
-                                requireActivity().getSupportFragmentManager()
-                                        .beginTransaction()
-                                        .replace(R.id.fragment_container, detailFragment)
-                                        .addToBackStack(null)
-                                        .commit();
-                            });
-                            recyclerView.setAdapter(adapter);
-                        } else {
-                            showError("No items found near " + userLocation);
+                                // Check if all calculations are done
+                                completedTasks[0]++;
+                                if (completedTasks[0] == totalItems) {
+                                    updateUI(nearbyItems);
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(String error) {
+                                Log.e(TAG, "Error calculating distance: " + error);
+
+                                // Still increment the counter to track progress
+                                completedTasks[0]++;
+                                if (completedTasks[0] == totalItems) {
+                                    updateUI(nearbyItems);
+                                }
+                            }
+                        });
+                    } else {
+                        // No location for this item; increment counter directly
+                        completedTasks[0]++;
+                        if (completedTasks[0] == totalItems) {
+                            updateUI(nearbyItems);
                         }
-                        showLoading(false);
-                    });
+                    }
                 }
             }
 
@@ -186,6 +174,32 @@ public class NearbyItemsFragment extends Fragment {
                     });
                 }
             }
+        });
+    }
+
+    private void updateUI(List<DonationItem> nearbyItems) {
+        getActivity().runOnUiThread(() -> {
+            if (!nearbyItems.isEmpty()) {
+                adapter = new NearbyItemsAdapter(nearbyItems, item -> {
+                    Fragment detailFragment;
+                    if ("Food".equals(item.getCategory())) {
+                        detailFragment = FoodItemDetailFragment.newInstance(item);
+                    } else {
+                        detailFragment = NonFoodItemDetail.newInstance(item);
+                    }
+
+                    // Navigate to the detail fragment
+                    requireActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, detailFragment)
+                            .addToBackStack(null)
+                            .commit();
+                });
+                recyclerView.setAdapter(adapter);
+            } else {
+                showError("No items found near " + userLocation);
+            }
+            showLoading(false);
         });
     }
 }
