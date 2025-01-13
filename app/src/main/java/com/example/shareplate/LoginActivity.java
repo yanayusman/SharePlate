@@ -65,10 +65,14 @@ import com.google.firebase.firestore.SetOptions;
 import org.json.JSONException;
 import android.os.Bundle;
 import com.facebook.GraphRequest;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
+import android.Manifest;
 
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     private static final int RC_SIGN_IN = 9001;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
     private EditText emailEditText;
     private EditText passwordEditText;
     private Button loginButton;
@@ -373,10 +377,44 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void navigateToHome() {
+        // Check for location permission before proceeding to home
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) 
+                != PackageManager.PERMISSION_GRANTED ||
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            
+            // Show rationale before requesting permission
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Location Permission Required")
+                    .setMessage("SharePlate needs location access to show you nearby food donations and help you connect with your local community.")
+                    .setPositiveButton("Grant Permission", (dialog, which) -> {
+                        ActivityCompat.requestPermissions(this,
+                                new String[]{
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                },
+                                LOCATION_PERMISSION_REQUEST_CODE);
+                    })
+                    .setNegativeButton("Not Now", (dialog, which) -> {
+                        // Proceed without location permission
+                        startHomeActivity();
+                    })
+                    .setCancelable(false)
+                    .show();
+        } else {
+            startHomeActivity();
+        }
+    }
+
+    private void startHomeActivity() {
         Intent intent = new Intent(LoginActivity.this, HomePageActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+        if (executor instanceof ExecutorService) {
+            ((ExecutorService) executor).shutdown();
+        }
+        executorService.shutdown();
     }
 
     private void handleFacebookAccessToken(AccessToken token, String facebookEmail, String facebookName) {
@@ -464,5 +502,16 @@ public class LoginActivity extends AppCompatActivity {
             ((ExecutorService) executor).shutdown();
         }
         executorService.shutdown();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                         @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            // Whether permission was granted or not, proceed to home
+            // The app will handle location availability in specific features
+            startHomeActivity();
+        }
     }
 }
