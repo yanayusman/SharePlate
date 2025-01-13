@@ -76,7 +76,7 @@
             android:layout_gravity="bottom"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_send"
-            android:tint="@color/button_green" />
+            app:tint="@color/button_green" />
 
     </LinearLayout>
 

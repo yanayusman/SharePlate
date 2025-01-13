@@ -15,8 +15,8 @@ public class SharePlateApplication extends Application {
         
         // Populate initial data
         new DonationItemRepository();
-
-        super.onCreate();
+        
+        // Initialize Places API
         Places.initialize(getApplicationContext(), "AIzaSyD3paVgDTxJxSRCxUy0cj09SEee_fEB9Zc");
     }
 }
