@@ -127,31 +127,33 @@ public class NotificationFragment extends Fragment {
 
         // Handle expiration notifications
         SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-        try {
-            String expirationString = notification.getExpiredDate();
-            if (expirationString != null && !expirationString.isEmpty()) {
-                Date expirationDate = dateFormat.parse(expirationString);
-                long expirationTimeMillis = expirationDate.getTime();
+        if(!"event".equals(notification.getActivityType())){
+            try {
+                String expirationString = notification.getExpiredDate();
+                if (expirationString != null && !expirationString.isEmpty()) {
+                    Date expirationDate = dateFormat.parse(expirationString);
+                    long expirationTimeMillis = expirationDate.getTime();
 
-                // Get current date at midnight
-                Calendar calendar = Calendar.getInstance();
-                calendar.set(Calendar.HOUR_OF_DAY, 0);
-                calendar.set(Calendar.MINUTE, 0);
-                calendar.set(Calendar.SECOND, 0);
-                calendar.set(Calendar.MILLISECOND, 0);
-                long currentDateMillis = calendar.getTimeInMillis();
+                    // Get current date at midnight
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.set(Calendar.HOUR_OF_DAY, 0);
+                    calendar.set(Calendar.MINUTE, 0);
+                    calendar.set(Calendar.SECOND, 0);
+                    calendar.set(Calendar.MILLISECOND, 0);
+                    long currentDateMillis = calendar.getTimeInMillis();
 
-                // Check if expiring within one day
-                if (expirationTimeMillis > currentDateMillis && expirationTimeMillis - currentDateMillis <= 24 * 60 * 60 * 1000) {
-                    notificationTitle.setText("[Alert] Food Expiring Soon: " + notification.getTitle());
-                    notificationDate.setText("Expires on: " + expirationString);
-                    notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
-                    notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
-                    return;
+                    // Check if expiring within one day
+                    if (expirationTimeMillis > currentDateMillis && expirationTimeMillis - currentDateMillis <= 24 * 60 * 60 * 1000) {
+                        notificationTitle.setText("[Alert] Food Expiring Soon: " + notification.getTitle());
+                        notificationDate.setText("Expires on: " + expirationString);
+                        notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
+                        notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
+                        return;
+                    }
                 }
+            } catch (ParseException e) {
+                Log.e("ExpirationAlert", "Failed to parse expiration date: " + notification.getExpiredDate(), e);
             }
-        } catch (ParseException e) {
-            Log.e("ExpirationAlert", "Failed to parse expiration date: " + notification.getExpiredDate(), e);
         }
 
         if (currentUserEmail != null) {
@@ -162,7 +164,7 @@ public class NotificationFragment extends Fragment {
 
                     notificationTitle.setText("NEW EVENT!!\n " + notification.getTitle());
                     notificationMessage.setText("Description: " + (notification.getMessage() != null ? notification.getMessage() : "N/A"));
-                    notificationDate.setText("Posted on: " + (notification.getExpiredDate() != null ? notification.getExpiredDate() : "N/A"));
+                    notificationDate.setText("Date: " + (notification.getExpiredDate() != null ? notification.getExpiredDate() : "N/A"));
                     notificationLocation.setText("Location: " + (notification.getLocation() != null ? notification.getLocation() : "N/A"));
 
                 } else if (currentUserEmail.equals(notification.getRequesterEmail())) {

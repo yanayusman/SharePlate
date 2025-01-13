@@ -23,6 +23,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -315,15 +316,49 @@ public class CommunityVolunteeringFragment extends Fragment {
         eventLocation.setText("Location : " + (event.getLocation() != null ? event.getLocation() : "N/A"));
         eventDesc.setText("Description : " + (event.getDescription() != null ? event.getDescription() : "N/A"));
 
-        joinButton.setOnClickListener(v -> {
-            CommunityDetailsFragment detailFragment = CommunityDetailsFragment.newInstance(event);
-            requireActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, detailFragment)
-                    .addToBackStack(null)
-                    .commit();
-        });
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
+        if (currentUser != null) {
+            String currentEmail = currentUser.getEmail();
+            if (currentEmail != null) {
+                // Fetch the user's joined events from Firestore
+                firestore.collection("users")
+                        .document(currentEmail)
+                        .collection("joinedEvents")
+                        .whereEqualTo("eventName", event.getName())
+                        .get()
+                        .addOnSuccessListener(querySnapshot -> {
+                            if (!querySnapshot.isEmpty()) {
+                                // User has already joined the event
+                                joinButton.setVisibility(View.VISIBLE);
+                                joinButton.setEnabled(false);
+                                joinButton.setText("Joined!");
+                                joinButton.setBackgroundColor(Color.LTGRAY);
+                                joinButton.setTextColor(Color.WHITE);
+                            } else {
+                                // User has not joined the event
+                                joinButton.setVisibility(View.VISIBLE);
+                                joinButton.setEnabled(true);
+                                joinButton.setText("Join Now!");
+                                joinButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.button_green_dark));
+
+                                joinButton.setOnClickListener(v -> {
+                                    CommunityDetailsFragment detailFragment = CommunityDetailsFragment.newInstance(event);
+                                    requireActivity().getSupportFragmentManager()
+                                            .beginTransaction()
+                                            .replace(R.id.fragment_container, detailFragment)
+                                            .addToBackStack(null)
+                                            .commit();
+                                });
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e("ButtonsVisibility", "Failed to check joined events: " + e.getMessage());
+                            joinButton.setVisibility(View.GONE);
+                        });
+            }
+        }
         eventGrid.addView(eventItem);
     }
 
