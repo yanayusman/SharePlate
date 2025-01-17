@@ -7,36 +7,14 @@ SharePlate is an Android application designed to facilitate food and non-food do
 
 ### Core Technologies
 - Language: Java & Kotlin
-- Platform: Android (min SDK 34, target SDK 34)
+- Platform: Android (min SDK 30, target SDK 34)
 - Backend: Firebase (Authentication, Firestore, Storage, Cloud Messaging)
 - Build System: Gradle with Kotlin DSL
 
 ### Key Dependencies
-
 ```kotlin:app/build.gradle.kts
-dependencies {
-    // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation("com.google.firebase:firebase-storage")
-    implementation("com.google.firebase:firebase-messaging:24.1.0")
-
-    // UI Components
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.2.0")
-    
-    // Image Loading
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    
-    // Location Services
-    implementation("com.google.android.gms:play-services-location:21.3.0")
-    implementation("com.google.android.libraries.places:places:3.3.0")
-    
-    // AI Integration
-    implementation("com.google.ai.client.generativeai:generativeai:0.1.1")
-}
+startLine: 44
+endLine: 45
 ```
 
 ## Application Architecture
@@ -46,6 +24,7 @@ dependencies {
 #### Authentication
 - Email/Password authentication
 - Google Sign-in integration
+- Facebook integration
 - Email verification system
 - User profile management
 
@@ -91,8 +70,8 @@ The app implements the repository pattern for data management:
 - User profile customization
 - Donation history tracking
 - Activity statistics
-- Favorites management
 - Profile image upload
+- Location preferences
 
 #### AI Integration
 - AI-powered chat assistant using Gemini
@@ -111,13 +90,8 @@ The app implements the repository pattern for data management:
 
 #### Permissions
 ```xml:app/src/main/AndroidManifest.xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-<uses-permission android:name="android.permission.CAMERA" />
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+startLine: 5
+endLine: 14
 ```
 
 ### 4. User Interface
@@ -128,6 +102,7 @@ The app implements the repository pattern for data management:
 - Responsive layouts
 - Custom styles and themes
 - Dark mode support
+- Custom fonts (Poppins)
 
 #### Key UI Components
 - Custom toolbar with search functionality
@@ -186,20 +161,11 @@ The app implements the repository pattern for data management:
    - Campaign information
    - Event status
 
-## Future Enhancements
-1. Enhanced push notifications
-2. Real-time chat between users
-3. Advanced search and filtering
-4. Analytics dashboard
-5. Multi-language support
-6. Offline capabilities
-7. Enhanced security measures
-8. Social media integration
-
 ## Build and Deployment
-- Minimum SDK: 34
+- Minimum SDK: 30
 - Target SDK: 34
 - Build using Gradle with Kotlin DSL
 - Firebase configuration required
 - Gemini API key required
 - ProGuard rules for release builds
+- Facebook Developer credentials required
