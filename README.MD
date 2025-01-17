@@ -13,6 +13,8 @@ SharePlate is a community-driven donation platform that facilitates food and non
 - Image upload and management
 - Location-based services
 - Push notifications
+- Feedback system for completed donations
+- Facebook integration
 
 ### User Interface
 - Modern Material Design 3 implementation
@@ -21,19 +23,21 @@ SharePlate is a community-driven donation platform that facilitates food and non
 - Image handling with Glide
 - Custom dialogs and loading indicators
 - Dark mode support
+- Custom fonts (Poppins)
 
 ## Tech Stack
 
 ### Core Technologies
 - Language: Java & Kotlin
-- Platform: Android (min SDK 34, target SDK 34)
+- Platform: Android (min SDK 30, target SDK 34)
 - Build System: Gradle with Kotlin DSL
 
 ### Firebase Integration
-- Authentication (Email/Password & Google Sign-in)
+- Authentication (Email/Password, Google Sign-in & Facebook)
 - Cloud Firestore for data storage
 - Firebase Storage for media
 - Firebase Cloud Messaging for notifications
+- Real-time data synchronization
 
 ### Key Dependencies
 ```kotlin
@@ -59,6 +63,10 @@ dependencies {
     
     // AI Integration
     implementation("com.google.ai.client.generativeai:generativeai:0.1.1")
+    
+    // Facebook SDK
+    implementation("com.facebook.android:facebook-login:latest.release")
+    implementation("com.facebook.android:facebook-android-sdk:latest.release")
 }
 ```
 
@@ -66,10 +74,11 @@ dependencies {
 
 ### Prerequisites
 - Android Studio Hedgehog or newer
-- JDK 17 or higher
-- Android SDK with minimum API level 34
+- JDK 11 or higher
+- Android SDK with minimum API level 30
 - Google Services configuration
 - Gemini API key for AI features
+- Facebook Developer credentials
 
 ### Building the Project
 1. Clone the repository
@@ -88,10 +97,14 @@ git clone https://github.com/yanayusman/SharePlate
    - Add your `google-services.json` to the app directory
    - Configure Firebase services in the Firebase Console
 
-4. Build and run:
+4. Configure Facebook SDK:
+   - Add Facebook App ID and Client Token in strings.xml
+   - Configure Facebook Developer settings
+
+5. Build and run:
    - Open in Android Studio
    - Sync Gradle files
-   - Run on an emulator or physical device
+   - Run on an emulator or physical device (API 30+)
 
 ## Architecture
 
@@ -108,21 +121,13 @@ git clone https://github.com/yanayusman/SharePlate
 - `EventRepo`: Manages community events
 - `NotificationRepo`: Handles push notifications
 
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 ## Security
-
-- Implements Firebase Authentication
+- Firebase Authentication with multiple providers
 - Secure file storage with Firebase Storage
 - Protected database access rules
 - Encrypted user data
 - Safe location sharing
+- Runtime permissions handling
 
 ## License
 
@@ -133,8 +138,8 @@ This project is licensed under the Apache License, Version 2.0. See [LICENSE](LI
 Project Link: [https://github.com/yanayusman/SharePlate]
 
 ## Acknowledgments
-
 - Material Design Components
 - Firebase Platform
 - Google AI (Gemini)
 - Android Jetpack Libraries
+- Facebook SDK
